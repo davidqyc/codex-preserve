@@ -11,6 +11,7 @@ import errno
 import io as _io
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -98,6 +99,35 @@ class CliSurface(unittest.TestCase):
             self.assertEqual(cli.main(["--version"]), 0)
         self.assertIn(__version__, out.getvalue())
         self.assertIn(exporter.PACKAGE_SCHEMA_VERSION, out.getvalue())
+
+    def test_project_version_package_and_cli_banner_are_one_identity(self):
+        """G5C guard: the static [project] version, the package __version__
+        and the printed banner must stay a single identity.
+
+        A narrow textual read of pyproject.toml is used rather than tomllib
+        so the guard runs on every supported Python (3.9+). Any future bump
+        that updates only one of the three sides fails here.
+        """
+        pyproject = (Path(__file__).resolve().parent.parent
+                     / "pyproject.toml")
+        project_version = None
+        in_project = False
+        for line in pyproject.read_text("utf-8").splitlines():
+            stripped = line.strip()
+            if stripped.startswith("["):
+                in_project = stripped == "[project]"
+            elif in_project:
+                match = re.fullmatch(r'version\s*=\s*"([^"]+)"', stripped)
+                if match:
+                    project_version = match.group(1)
+                    break
+        self.assertIsNotNone(project_version,
+                             "no static [project] version found")
+        self.assertEqual(project_version, __version__)
+        with captured() as (out, _err):
+            self.assertEqual(cli.main(["--version"]), 0)
+        self.assertTrue(out.getvalue().startswith(
+            "codex-preserve %s" % project_version))
 
     def test_archive_is_refused_rather_than_aliased(self):
         for verb in ("archive", "unarchive"):
