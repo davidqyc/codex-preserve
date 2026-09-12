@@ -8,4 +8,4 @@ This project is not affiliated with, endorsed by, or certified by OpenAI.
 
 __all__ = ["__version__"]
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
