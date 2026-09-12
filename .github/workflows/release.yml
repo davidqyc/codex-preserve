@@ -1,0 +1,90 @@
+name: release
+
+# Prepared, not armed. Publishing requires BOTH a pushed version tag and a
+# PyPI Trusted Publisher that has been configured for this repository and
+# this workflow filename. Until that publisher exists, the publish job fails
+# closed at the OIDC exchange instead of falling back to a stored password.
+#
+# There is deliberately no long-lived PyPI API token anywhere in this file.
+# Trusted Publishing mints a short-lived, workflow-scoped credential through
+# OIDC at publish time, so there is no secret to leak, rotate or revoke.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Build once. Everything downstream consumes these exact artifacts, so the
+  # bytes that are checked are the bytes that would be published.
+  build:
+    name: Build sdist and wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build twine
+      - name: Build
+        run: python -m build
+      - name: Check distribution metadata
+        run: python -m twine check --strict dist/*
+      - name: Show what would be published
+        run: ls -l dist/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  # A tag must not be publishable unless the tagged tree still passes its own
+  # gates, so the release path re-runs them rather than trusting a green CI
+  # run on some other commit.
+  verify:
+    name: Re-run release gates on the tagged tree
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install the package
+        run: python -m pip install .
+      - name: Public hygiene scan
+        run: python tools/public_hygiene_scan.py .
+      - name: Test suite
+        run: python -m unittest discover -t . -s tests -v
+      - name: Three-state examples
+        run: ./examples/run_examples.sh
+
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [build, verify]
+    # Tag pushes only. A manual dispatch builds and verifies but never
+    # publishes.
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: pypi
+      url: https://pypi.org/p/codex-preserve
+    permissions:
+      # `id-token: write` is requested in this job and nowhere else: it is the
+      # OIDC credential Trusted Publishing exchanges for a short-lived upload
+      # token. No other job in this workflow can mint one.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        with:
+          name: dist
+          path: dist/
+      - name: Publish with PyPI Trusted Publishing (OIDC)
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
+        # No `password:` input, deliberately. Supplying one would switch this
+        # step to long-lived API-token auth and defeat the point.

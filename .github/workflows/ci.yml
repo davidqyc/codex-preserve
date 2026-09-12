@@ -1,0 +1,99 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Mirrors `requires-python = ">=3.9"` in pyproject.toml: oldest
+        # supported, one middle version, newest supported.
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install the package
+        run: python -m pip install .
+      - name: Console command is installed and self-describing
+        run: |
+          codex-preserve --help
+          codex-preserve --version
+      - name: Public hygiene scan
+        run: python tools/public_hygiene_scan.py .
+      - name: Deterministic synthetic test suite
+        run: python -m unittest discover -t . -s tests -v
+      - name: Three-state examples through the installed command
+        run: ./examples/run_examples.sh
+
+  package:
+    # The release-critical packaging checks: the distributions build, carry
+    # the right license metadata, and ship no private-only file.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build twine
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Check distribution metadata
+        run: python -m twine check --strict dist/*
+      - name: Built metadata declares Apache-2.0 and ships the LICENSE
+        run: |
+          python - <<'PY'
+          import pathlib, sys, tarfile, zipfile
+          dist = pathlib.Path("dist")
+          wheels = list(dist.glob("*.whl"))
+          sdists = list(dist.glob("*.tar.gz"))
+          assert len(wheels) == 1 and len(sdists) == 1, sorted(dist.iterdir())
+          wheel, sdist = wheels[0], sdists[0]
+          problems = []
+
+          with zipfile.ZipFile(wheel) as archive:
+              names = archive.namelist()
+              meta = [n for n in names if n.endswith(".dist-info/METADATA")]
+              assert len(meta) == 1, meta
+              text = archive.read(meta[0]).decode("utf-8")
+              if "License-Expression: Apache-2.0" not in text:
+                  problems.append("wheel METADATA has no License-Expression")
+              if "License-File: LICENSE" not in text:
+                  problems.append("wheel METADATA has no License-File")
+              if not any(n.endswith(".dist-info/licenses/LICENSE")
+                         for n in names):
+                  problems.append("wheel ships no LICENSE")
+              if any("/tests/" in n or n.startswith("tests/") for n in names):
+                  problems.append("wheel ships the test suite")
+
+          with tarfile.open(sdist) as archive:
+              names = archive.getnames()
+              if not any(n.endswith("/LICENSE") for n in names):
+                  problems.append("sdist ships no LICENSE")
+              if not any(n.endswith("/PKG-INFO") for n in names):
+                  problems.append("sdist ships no PKG-INFO")
+
+          if problems:
+              print("\n".join(problems))
+              sys.exit(1)
+          print("license and packaging metadata OK")
+          PY
+      - name: Built wheel reproduces the three-state contract when installed
+        # A fresh interpreter with nothing but the built wheel in it, so this
+        # cannot pass on the strength of the source tree being importable.
+        run: |
+          python -m venv /tmp/fresh
+          /tmp/fresh/bin/python -m pip install --upgrade pip
+          /tmp/fresh/bin/python -m pip install dist/*.whl
+          /tmp/fresh/bin/codex-preserve --help
+          /tmp/fresh/bin/codex-preserve --version
+          PATH="/tmp/fresh/bin:$PATH" ./examples/run_examples.sh

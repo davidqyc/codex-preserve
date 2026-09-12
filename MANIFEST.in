@@ -1,0 +1,12 @@
+# The sdist is meant to be a source distribution you can actually verify:
+# unpack it, run the test suite, run the hygiene scan, run the examples.
+# Without these grafts setuptools ships a partial `tests/` directory whose
+# fixtures, scanner and package marker are all missing, so the suite it
+# carries cannot run at all.
+graft tests
+graft examples
+graft tools
+
+global-exclude *.py[cod]
+global-exclude .DS_Store
+prune **/__pycache__

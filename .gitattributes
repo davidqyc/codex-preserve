@@ -1,0 +1,7 @@
+# The example packages are byte-exact fixtures: their SHA-256 values are
+# recorded in package.manifest.json, so any end-of-line translation on
+# checkout would make a shipped PASS example verify as FAIL.
+examples/** -text
+
+# The LICENSE must stay byte-identical to the canonical Apache-2.0 text.
+LICENSE -text

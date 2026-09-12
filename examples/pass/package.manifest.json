@@ -1,0 +1,47 @@
+{
+  "artifact_candidates": [],
+  "artifact_provenance_version": "turn-identity-a-plus-v1",
+  "artifacts": [],
+  "attachments": [],
+  "content_fingerprint": "2fb516a768709628984b37557816155bd53b03a17bfbbf7597b2cc94bfa58cba",
+  "conversation_files": [
+    {
+      "bytes": 4679,
+      "path": "对话记录.md",
+      "sha256": "f5c2e9bbe1104245dfedd74dc98ab7345eb553deca01c4c01c05dae2d3b72c84"
+    },
+    {
+      "bytes": 10737,
+      "path": "ConversationExport.receipt.json",
+      "sha256": "fdd597d9f1be0344545d139f9d4ca12d4f1fc1f85748723cfa4fb362031533b0"
+    },
+    {
+      "bytes": 99,
+      "path": "输出文件/输出索引.md",
+      "sha256": "b38da9f5a3c4d4494b731cfc027231083686049b2178434ffb470ddf9bff0073"
+    }
+  ],
+  "display_title": "please audit the repository",
+  "display_title_source": "latest_meaningful_owner_request",
+  "export_status": "COMPLETE",
+  "handoff_zip": {
+    "bytes": null,
+    "canonical_package_dependency": false,
+    "excludes_itself": true,
+    "generation": "on_demand",
+    "path": "完整会话包.zip",
+    "sha256": null,
+    "status": "not_generated_by_default"
+  },
+  "materialized_payload_bytes": 0,
+  "max_package_bytes": 268435456,
+  "package_complete": true,
+  "package_dirname": "please audit the repository__20260825-1000__01a00000__6f665c79",
+  "package_relative_path": "demo-project/please audit the repository__20260825-1000__01a00000__6f665c79",
+  "package_schema_version": "2.2",
+  "project_bucket": "demo-project",
+  "project_bucket_source": "persisted_repository_identity",
+  "rollout_coordinate_sha256": "6f665c79f1e80e2c5e9f921201e53f2ab53ef1cf9729184c8e77474345a3a200",
+  "session_id": "01a00000-1111-2222-3333-444444444444",
+  "session_started_at": "2026-08-25T10:00:00.000Z"
+}

@@ -1,0 +1,295 @@
+{
+  "artifacts": {
+    "artifact_count": 0,
+    "artifact_provenance_version": "turn-identity-a-plus-v1",
+    "candidate_provenance": [],
+    "discovery": "exact_paths_only_no_filesystem_scan",
+    "items": [],
+    "missing_exact_final_path_candidates": 0,
+    "retryable_exact_final_artifact_candidates": 0,
+    "review_bundle_present": false
+  },
+  "attachments": [],
+  "counts": {
+    "assistant_final_exported": 1,
+    "assistant_progress_exported": 1,
+    "attachment_wrappers_unparsed_kept_as_context": 0,
+    "command_execution_accounting_closed": true,
+    "command_execution_records_paired": 1,
+    "command_execution_records_rendered_unpaired": 0,
+    "command_execution_records_source": 1,
+    "command_execution_records_unpaired": 0,
+    "command_execution_records_unpaired_failed": 0,
+    "command_execution_rendering_closed": true,
+    "context_compactions": 0,
+    "developer_messages_omitted": 0,
+    "duplicate_logical_records_deduped": 5,
+    "duplicate_logical_records_detected": 5,
+    "empty_stdin_poll_folding": true,
+    "exit_status_resolved": "1/1",
+    "failed_actions": 0,
+    "failed_tool_actions": 0,
+    "file_change_paths": 0,
+    "file_change_records": 0,
+    "fold_policy_version": "structural-polls-only-v1",
+    "fold_windows": 0,
+    "logical_tool_rows_exported": 1,
+    "opaque_reasoning_count": 0,
+    "owner_messages_attachment_envelope_separated": 0,
+    "owner_messages_exported": 1,
+    "persisted_user_context_omitted": 0,
+    "reasoning_records_source": 2,
+    "shell_command_folding": false,
+    "stdin_empty_polls": 0,
+    "stdin_non_empty_inputs": 0,
+    "stdin_unproven_inputs": 0,
+    "timeline_rows_exported": 1,
+    "tool_calls_source": 1,
+    "tool_rows_folded": 0,
+    "unbound_records": 0,
+    "visible_reasoning_blocks_selected": 2,
+    "visible_reasoning_blocks_source": 2,
+    "visible_reasoning_records_omitted": 0,
+    "visible_reasoning_records_selected": 2,
+    "visible_reasoning_records_source": 2,
+    "wait_actions": 0,
+    "wait_folding": true
+  },
+  "duplicate_breakdown": {
+    "assistant_event_response_id_match": 2,
+    "reasoning_event_response_id_match": 2,
+    "user_event_exact_text_mirror": 1
+  },
+  "export_status": "COMPLETE",
+  "exporter_version": "2.2.0",
+  "git_provenance": {
+    "evidence_time": "export_time",
+    "probed": false,
+    "reason": "disabled"
+  },
+  "markdown": {
+    "body_bytes": 4541,
+    "body_sha256": "6509585e3046f7fa99c4d1f674738bb1bc74f021bd224e796e97be018a6c1fef"
+  },
+  "package": {
+    "canonical_representation": "project_grouped_session_folder",
+    "display_title": "please audit the repository",
+    "display_title_source": "latest_meaningful_owner_request",
+    "handoff_zip_default_generation": "disabled",
+    "handoff_zip_on_demand": "available",
+    "handoff_zip_role": "derived_transfer_artifact",
+    "materialized_payload_bytes": 0,
+    "max_package_bytes": 268435456,
+    "package_complete": true,
+    "package_dirname": "please audit the repository__20260825-1000__01a00000__6f665c79",
+    "package_relative_path": "demo-project/please audit the repository__20260825-1000__01a00000__6f665c79",
+    "package_schema_version": "2.2",
+    "project_bucket": "demo-project",
+    "project_bucket_source": "persisted_repository_identity",
+    "rollout_coordinate_sha256": "6f665c79f1e80e2c5e9f921201e53f2ab53ef1cf9729184c8e77474345a3a200"
+  },
+  "partial_state": {
+    "all_turns_completed": true,
+    "final_answer_invented": false,
+    "final_answer_present": true,
+    "partial_turn_count": 0
+  },
+  "privacy": {
+    "always_dropped_categories": [
+      "rate_limit_and_credit_telemetry",
+      "account_identity",
+      "dynamic_tool_schemas",
+      "base_instructions_text",
+      "world_state_envelopes",
+      "injected_user_context_envelope",
+      "file_change_content",
+      "file_change_unified_diff"
+    ],
+    "drops": {
+      "account_identity": 2,
+      "base_instructions_text": 1,
+      "dynamic_tool_schemas": 1,
+      "rate_limit_and_credit_telemetry": 1
+    },
+    "drops_total": 5,
+    "normalization_enabled": true,
+    "redactions": {},
+    "redactions_total": 0,
+    "sanitization_rescan_residuals": {}
+  },
+  "reasoning_boundary": {
+    "hidden_chain_of_thought_exported": false,
+    "hidden_chain_of_thought_promised": false,
+    "missing_reasoning_reconstructed": false,
+    "opaque_reasoning_count": 0,
+    "opaque_reasoning_exported": false,
+    "visible_reasoning_summary_if_exposed": true
+  },
+  "reasoning_selection": {
+    "anchor_counts": {
+      "final_answer": 1,
+      "owner_message": 1,
+      "turn_start": 1
+    },
+    "anchors_without_same_turn_reasoning": 0,
+    "consecutive_exact_repeat_blocks_suppressed": 0,
+    "opaque_reasoning_count": 0,
+    "reasoning_records_source": 2,
+    "records_dropped_by_cap": 0,
+    "selection_cap": 40,
+    "selection_policy_version": "structural-decision-point-v1",
+    "selection_scope": "turn_local",
+    "visible_reasoning_blocks_omitted": 0,
+    "visible_reasoning_blocks_selected": 2,
+    "visible_reasoning_blocks_source": 2,
+    "visible_reasoning_records_omitted": 0,
+    "visible_reasoning_records_selected": 2,
+    "visible_reasoning_records_source": 2
+  },
+  "receipt_core_sha256": "897d2b5d3085fd53f2445c7b90ea65124182cfeb15abd45bd7e24c96e8a17c30",
+  "schema": {
+    "item_type_counts": {
+      "AgentMessage": 2,
+      "CommandExecution": 1,
+      "Reasoning": 2,
+      "UserMessage": 1
+    },
+    "payload_type_counts": {
+      "event_msg/item_completed": 6,
+      "event_msg/task_complete": 1,
+      "event_msg/task_started": 1,
+      "event_msg/token_count": 1,
+      "response_item/custom_tool_call": 1,
+      "response_item/custom_tool_call_output": 1,
+      "response_item/message": 3,
+      "response_item/reasoning": 2,
+      "session_meta/-": 1,
+      "turn_context/-": 1
+    },
+    "record_type_counts": {
+      "event_msg": 9,
+      "response_item": 7,
+      "session_meta": 1,
+      "turn_context": 1
+    },
+    "total_lines": 18,
+    "unknown_item_type_counts": {},
+    "unknown_payload_type_counts": {},
+    "unknown_record_type_counts": {},
+    "unparsable_lines": 0
+  },
+  "session": {
+    "aggregate_token_usage": {
+      "cached_input_tokens": 10,
+      "input_tokens": 100,
+      "model_context_window": 258400,
+      "output_tokens": 20,
+      "reasoning_output_tokens": 5,
+      "total_tokens": 120
+    },
+    "approval_policy": "never",
+    "base_instructions_bytes": 500,
+    "base_instructions_provenance_model": "gpt-5.6-sol",
+    "base_instructions_sha256": "392f7fbf074d01323a84f7fb75f8d50845653809bd22d1919bcf79e0ff81640b",
+    "branch": "codex/wip/demo",
+    "cli_version": "0.149.0-alpha.4.1",
+    "completed_turn_count": 1,
+    "dynamic_tool_groups": [
+      {
+        "name": "codex_app",
+        "tool_count": 2
+      }
+    ],
+    "efforts": [
+      "xhigh"
+    ],
+    "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "history_mode": "paginated",
+    "last_activity_at": "2026-08-25T10:18:00.000Z",
+    "model": "gpt-5.6-sol",
+    "model_provider": "openai",
+    "models": [
+      "gpt-5.6-sol"
+    ],
+    "originator": "Codex Desktop",
+    "partial_turn_ids": [],
+    "reasoning_effort": "xhigh",
+    "reasoning_summary": null,
+    "repo": "testowner/demo-project",
+    "sandbox_policy": "danger-full-access",
+    "session_id": "01a00000-1111-2222-3333-444444444444",
+    "source": "vscode",
+    "started_at": "2026-08-25T10:00:00.000Z",
+    "thread_source": "user",
+    "turn_count": 1,
+    "turn_ids": [
+      "01a00000-aaaa-bbbb-cccc-000000000001"
+    ],
+    "workspace": "$WORKSPACE",
+    "workspace_roots": [
+      "$WORKSPACE"
+    ]
+  },
+  "source": {
+    "rollout_bytes": 8235,
+    "rollout_mtime_ns_post": 1789223477601762318,
+    "rollout_mtime_ns_pre": 1789223477601762318,
+    "rollout_sha256_post": "28bd64e1ec1eef561e9903f062d4258ab0c6382084da601445aaa289e5cdf78f",
+    "rollout_sha256_pre": "28bd64e1ec1eef561e9903f062d4258ab0c6382084da601445aaa289e5cdf78f",
+    "rollout_tilde_normalized": "$CODEX_STATE/sessions/rollout-2026-08-25T10-00-00-01a00000-1111-2222-3333-444444444444.jsonl",
+    "session_id": "01a00000-1111-2222-3333-444444444444",
+    "source_changed_during_export": false,
+    "source_class": "sessions",
+    "source_opened_for_write": false,
+    "stability_gate": "post_render_immediately_before_publication",
+    "stable_output_basename": "testowner-demo-project__20260825-100000__01a00000__6f665c79__CodexConversationExport",
+    "stable_rollout_identity": {
+      "coordinate_sha256": "6f665c79f1e80e2c5e9f921201e53f2ab53ef1cf9729184c8e77474345a3a200",
+      "logical_rollout_id": "01a00000-1111-2222-3333-444444444444__6f665c79f1e8",
+      "rollout_filename": "rollout-2026-08-25T10-00-00-01a00000-1111-2222-3333-444444444444.jsonl",
+      "session_id": "01a00000-1111-2222-3333-444444444444",
+      "started_at": "2026-08-25T10:00:00.000Z"
+    }
+  },
+  "tool_timeline": {
+    "command_char_limit": 200,
+    "command_execution_accounting_closed": true,
+    "command_execution_records_paired": 1,
+    "command_execution_records_rendered_unpaired": 0,
+    "command_execution_records_source": 1,
+    "command_execution_records_unpaired": 0,
+    "command_execution_records_unpaired_failed": 0,
+    "command_execution_rendering_closed": true,
+    "empty_stdin_poll_folding": true,
+    "exit_status_resolved": "1/1",
+    "exit_status_unresolved": 0,
+    "failed_actions": 0,
+    "failed_tool_actions": 0,
+    "fold_policy_version": "structural-polls-only-v1",
+    "fold_window_min_rows": 3,
+    "fold_windows": 0,
+    "logical_tool_rows_exported": 1,
+    "shell_command_folding": false,
+    "stdin_empty_polls": 0,
+    "stdin_non_empty_inputs": 0,
+    "stdin_unproven_inputs": 0,
+    "timeline_rows_exported": 1,
+    "tool_calls_source": 1,
+    "tool_rows_folded": 0,
+    "wait_actions": 0,
+    "wait_folding": true
+  },
+  "volatile": {
+    "generated_at": "2026-09-12T14:31:17Z",
+    "handoff_zip_generation": "not_generated_by_default",
+    "handoff_zip_on_demand_path": "~/exports/demo-project/please audit the repository__20260825-1000__01a00000__6f665c79/完整会话包.zip",
+    "handoff_zip_path": null,
+    "manifest_path": "~/exports/demo-project/please audit the repository__20260825-1000__01a00000__6f665c79/package.manifest.json",
+    "markdown_bytes": 4679,
+    "markdown_path": "~/exports/demo-project/please audit the repository__20260825-1000__01a00000__6f665c79/对话记录.md",
+    "markdown_sha256": "f5c2e9bbe1104245dfedd74dc98ab7345eb553deca01c4c01c05dae2d3b72c84",
+    "package_path": "~/exports/demo-project/please audit the repository__20260825-1000__01a00000__6f665c79",
+    "receipt_path": "~/exports/demo-project/please audit the repository__20260825-1000__01a00000__6f665c79/ConversationExport.receipt.json"
+  },
+  "warnings": []
+}

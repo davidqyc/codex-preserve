@@ -1,0 +1,45 @@
+[build-system]
+# PEP 639 license expressions (`license = "Apache-2.0"` plus `license-files`)
+# require setuptools 77 or newer, which is also what emits core metadata 2.4
+# with a `License-Expression` field.
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codex-preserve"
+version = "0.1.0"
+description = "Export OpenAI Codex sessions to durable, human-readable packages and verify them against a manifest."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+# Zero runtime dependencies: the export/verify core uses only the standard
+# library, and nothing in it makes a network or model call.
+dependencies = []
+keywords = ["codex", "session", "export", "archive", "provenance", "integrity"]
+classifiers = [
+    # No `License ::` classifier: PEP 639 forbids pairing a license
+    # expression with the deprecated license classifiers, and the expression
+    # above is the authoritative declaration.
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Version Control",
+    "Topic :: System :: Archiving",
+]
+
+[project.scripts]
+codex-preserve = "codex_preserve.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
