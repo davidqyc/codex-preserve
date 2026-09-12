@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codex-preserve"
-version = "0.1.0"
+version = "0.1.1"
 description = "Export OpenAI Codex sessions to durable, human-readable packages and verify them against a manifest."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -37,6 +37,12 @@ classifiers = [
 
 [project.scripts]
 codex-preserve = "codex_preserve.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/davidqyc/codex-preserve"
+Repository = "https://github.com/davidqyc/codex-preserve"
+Issues = "https://github.com/davidqyc/codex-preserve/issues"
+"Release notes" = "https://github.com/davidqyc/codex-preserve/releases"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

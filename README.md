@@ -16,6 +16,22 @@ OpenAI, and it is not an OpenAI product or a first-party Codex component. It
 ships no OpenAI logo or other visual branding. It is named for the Codex
 sessions it reads.
 
+## Install
+
+```bash
+python -m pip install codex-preserve
+```
+
+Python 3.9 or newer. No runtime dependencies. Confirm the CLI surface with:
+
+```bash
+codex-preserve --help
+```
+
+Public project pages: [PyPI](https://pypi.org/project/codex-preserve/) ·
+[Releases](https://github.com/davidqyc/codex-preserve/releases) ·
+[Issues](https://github.com/davidqyc/codex-preserve/issues)
+
 ## What it does
 
 - **Exports** one already-persisted local Codex rollout into a per-session
@@ -99,19 +115,12 @@ human-readable export, in the stable output basename, and in the output
 directory / bucket names. The raw remote URL is discarded and never
 exported, with or without the flag.
 
-## Install
-
-```bash
-pip install .
-```
-
-Python 3.9 or newer. No runtime dependencies.
-
 ## Try it in one command
 
 You do not need a Codex session to see what this tool does. Three synthetic
-example packages ship with the repository and exercise the entire
-verification contract:
+example packages and the runner script below live in the repository
+checkout, not in the installed wheel; from a clone of the repository they
+exercise the entire verification contract:
 
 ```bash
 ./examples/run_examples.sh
