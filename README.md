@@ -1,5 +1,7 @@
 # codex-preserve
 
+**English** | [简体中文](README.zh-CN.md)
+
 `codex-preserve` exports an OpenAI Codex session out of Codex into durable,
 human-readable files, and verifies that every manifest-attested member is
 present and byte-identical to the SHA-256 and size recorded in the manifest.
