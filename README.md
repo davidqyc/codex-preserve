@@ -32,6 +32,24 @@ Public project pages: [PyPI](https://pypi.org/project/codex-preserve/) ·
 [Releases](https://github.com/davidqyc/codex-preserve/releases) ·
 [Issues](https://github.com/davidqyc/codex-preserve/issues)
 
+## See the verifier work in ~30 seconds
+
+You do not need a real Codex session. Clone the repository and run the three
+synthetic packages:
+
+```bash
+git clone --depth 1 https://github.com/davidqyc/codex-preserve.git
+cd codex-preserve
+./examples/run_examples.sh
+```
+
+The runner prints one `PASS`, one `FAIL` and one `UNVERIFIABLE` verdict and
+checks that they exit `0`, `1` and `2` respectively. If `codex-preserve` is
+already installed it uses that command; otherwise it runs the checkout
+directly. The same fixtures are asserted by the test suite, so the demo stays
+regression-backed. See [examples/README.md](examples/README.md) for the exact
+cases.
+
 ## What it does
 
 - **Exports** one already-persisted local Codex rollout into a per-session
@@ -114,23 +132,6 @@ still normalized to `owner/repo` and may appear in the receipt, in the
 human-readable export, in the stable output basename, and in the output
 directory / bucket names. The raw remote URL is discarded and never
 exported, with or without the flag.
-
-## Try it in one command
-
-You do not need a Codex session to see what this tool does. Three synthetic
-example packages and the runner script below live in the repository
-checkout, not in the installed wheel; from a clone of the repository they
-exercise the entire verification contract:
-
-```bash
-./examples/run_examples.sh
-```
-
-That prints one `PASS`, one `FAIL` and one `UNVERIFIABLE` verdict and checks
-that each exits `0`, `1` and `2` respectively. See
-[examples/README.md](examples/README.md) for what each one demonstrates and
-why. The same three packages are asserted by the test suite, so they stay
-honest.
 
 ## Use
 
@@ -216,10 +217,11 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Status
 
-Version 0.1.0, first public release line. The export/verify contract
-described above — the three verdicts, the exit codes, and the limits of what
-the manifest proves — is what this version commits to. Package member
-filenames are still an open question; see [Localization](#localization).
+The current published release is listed on [GitHub Releases](https://github.com/davidqyc/codex-preserve/releases).
+The export/verify contract described above — the three verdicts, the exit
+codes, and the limits of what the manifest proves — is what the current 0.1.x
+line commits to. Package member filenames are still an open question; see
+[Localization](#localization).
 
 **Not affiliated with OpenAI.** `codex-preserve` is an independent, unofficial
 tool. It is not affiliated with, endorsed by, sponsored by, or certified by
