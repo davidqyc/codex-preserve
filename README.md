@@ -10,6 +10,18 @@ It reads a Codex session; it never modifies one.
 > durable copy *outside* Codex and verifies the exported package. It does not
 > modify session state, and it is not a replacement for `codex archive`.
 
+## When to use it
+
+Use `codex-preserve` when you want a durable backup or audit copy of one
+already-persisted local Codex session and you care whether every
+manifest-attested exported file is still present and byte-identical later.
+
+It is deliberately not a transcript viewer, sync tool, or restore/import
+mechanism. If all you need is a browsable or shareable HTML transcript, a
+transcript exporter is a better fit. `codex-preserve` is for preservation,
+provenance and manifest-relative integrity, with read-only source behavior and
+fail-closed verification.
+
 **Not affiliated with OpenAI.** `codex-preserve` is an independent, unofficial
 tool. It is not affiliated with, endorsed by, sponsored by, or certified by
 OpenAI, and it is not an OpenAI product or a first-party Codex component. It
