@@ -2,9 +2,14 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-`codex-preserve` exports an OpenAI Codex session out of Codex into durable,
-human-readable files, and verifies that every manifest-attested member is
-present and byte-identical to the SHA-256 and size recorded in the manifest.
+`codex-preserve` is a local-first backup and audit tool for OpenAI Codex sessions.
+
+It exports one already-persisted local session into durable, human-readable
+files outside Codex.
+
+Later, it can verify that every manifest-attested file is still present and
+byte-identical to the SHA-256 and size recorded in the manifest.
+
 It reads a Codex session; it never modifies one.
 
 > **This is not `codex archive`.** The built-in `codex archive` command changes
