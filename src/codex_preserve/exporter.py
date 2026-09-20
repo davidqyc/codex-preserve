@@ -38,10 +38,10 @@ import zipfile
 from collections import Counter, OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, FrozenSet, List, Optional, Sequence, Tuple
 from urllib.parse import quote
 
-EXPORTER_VERSION = "2.2.0"
+EXPORTER_VERSION = "2.2.1"
 PACKAGE_SCHEMA_VERSION = "2.2"
 # The only package schema versions this code can actually interpret: 2.2 is
 # what it writes, and 2.1 is the historical shape the legacy preservation
@@ -171,6 +171,7 @@ KNOWN_EVENT_MSG_TYPES = frozenset(
         "task_started",
         "task_complete",
         "thread_settings_applied",
+        "turn_aborted",
     )
 )
 KNOWN_ITEM_TYPES = frozenset(
@@ -181,12 +182,32 @@ KNOWN_ITEM_TYPES = frozenset(
         "CommandExecution",
         "FileChange",
         "ContextCompaction",
+        "McpToolCall",
     )
 )
 # Record classes that legitimately carry no payload `type` discriminator.
 UNTYPED_PAYLOAD_RECORDS = frozenset(
     ("session_meta", "turn_context", "world_state", "compacted")
 )
+
+# Exact lifecycle wire vocabularies for the persisted rollout protocol.
+MAX_LIFECYCLE_IDENTIFIER_CHARS = 512
+MCP_TOOL_CALL_TERMINAL_STATUSES = frozenset(("completed", "failed"))
+MCP_TOOL_CALL_NON_TERMINAL_STATUSES = frozenset(("inProgress",))
+MCP_TOOL_CALL_PRIVATE_PAYLOAD_KEYS = (
+    ("arguments", "mcp_tool_call_arguments"),
+    ("result", "mcp_tool_call_result"),
+    ("error", "mcp_tool_call_error"),
+)
+MCP_TOOL_CALL_CONNECTOR_METADATA_KEYS = frozenset((
+    "pluginId", "plugin_id", "readOnlyHint", "read_only_hint",
+    "connectorId", "connector_id", "appId", "app_id",
+    "link", "resourceUri", "resource_uri", "resourceLink", "resource_link",
+))
+TURN_ABORT_REASONS = frozenset((
+    "interrupted", "replaced", "review_ended", "budget_limited"
+))
+TURN_ABORT_TIMING_KEYS = ("started_at", "completed_at", "duration_ms")
 
 
 # --------------------------------------------------------------------------
@@ -1245,6 +1266,14 @@ def joined_text(blocks: Any) -> str:
     return "".join(out)
 
 
+def exact_wire(value: Any, vocabulary: FrozenSet[str]) -> bool:
+    return isinstance(value, str) and value in vocabulary
+
+
+def bounded_identifier(value: Any) -> bool:
+    return isinstance(value, str) and 0 < len(value) <= MAX_LIFECYCLE_IDENTIFIER_CHARS
+
+
 def turn_id_of(payload: Dict[str, Any]) -> Optional[str]:
     """Turn binding, strongest mechanical evidence first."""
     for key in ("turn_id",):
@@ -2038,6 +2067,9 @@ class RolloutModel:
         self.turn_order: List[str] = []
         self.turn_started: Dict[str, dict] = {}
         self.turn_completed: Dict[str, dict] = {}
+        self.turn_aborted: Dict[str, dict] = {}
+        self.unbound_turn_aborts: List[dict] = []
+        self.turn_outcome_conflicts: Dict[str, dict] = {}
         self.message_turn_bindings: Dict[str, set] = {}
         self.thread_settings: Dict[str, Any] = {}
 
@@ -2053,6 +2085,7 @@ class RolloutModel:
         self.file_changes: List[dict] = []
         self.context_compactions: List[dict] = []
         self.command_executions: List[dict] = []
+        self.mcp_tool_calls_recognized = 0
 
         self.token_usage: Dict[str, Any] = {}
         self.record_type_counts: Counter = Counter()
@@ -2396,6 +2429,32 @@ class RolloutModel:
             }
         elif ptype == "item_completed":
             self._on_item_completed(seq, timestamp, payload)
+        elif ptype == "turn_aborted":
+            self._on_turn_aborted(seq, timestamp, payload)
+
+    def _on_turn_aborted(self, seq: int, timestamp, payload: dict) -> None:
+        raw_turn_id = payload.get("turn_id")
+        turn_id_present = raw_turn_id is not None
+        turn_id_valid = not turn_id_present or bounded_identifier(raw_turn_id)
+        timing_valid = all(
+            payload.get(key) is None
+            or (type(payload.get(key)) is int and 0 <= payload[key] < 2 ** 63)
+            for key in TURN_ABORT_TIMING_KEYS
+        )
+        if not turn_id_valid or not timing_valid:
+            self.unknown_payload_type_counts["event_msg/turn_aborted#invalid"] += 1
+            return
+        reason = payload.get("reason")
+        if not exact_wire(reason, TURN_ABORT_REASONS):
+            self.unknown_payload_type_counts["event_msg/turn_aborted#unsupported_reason"] += 1
+            return
+        detail = {"seq": seq, "timestamp": timestamp, "reason": reason}
+        if not turn_id_present:
+            self.unbound_turn_aborts.append(detail)
+            self.unbound_records += 1
+            self.warnings.append("turn_aborted carries no turn id; the abort is counted but bound to no turn")
+            return
+        self.turn_aborted.setdefault(self._touch_turn(raw_turn_id), detail)
 
     def _on_item_completed(self, seq: int, timestamp, payload: dict) -> None:
         item = as_dict(payload.get("item"))
@@ -2407,6 +2466,9 @@ class RolloutModel:
             self.unknown_payload_type_counts[
                 "event_msg/item_completed/%s" % itype
             ] += 1
+            return
+        if itype == "McpToolCall":
+            self._on_mcp_tool_call(item)
             return
         started = payload.get("started_at_ms")
         completed = payload.get("completed_at_ms")
@@ -2478,13 +2540,46 @@ class RolloutModel:
                  "replacement_history_count": None}
             )
 
+    def _on_mcp_tool_call(self, item: dict) -> None:
+        for key, category in MCP_TOOL_CALL_PRIVATE_PAYLOAD_KEYS:
+            if item.get(key) is not None:
+                self.privacy.note_drop(category)
+        if any(key in item for key in MCP_TOOL_CALL_CONNECTOR_METADATA_KEYS):
+            self.privacy.note_drop("mcp_tool_call_connector_metadata")
+        if not all(bounded_identifier(item.get(key)) for key in ("id", "server", "tool")):
+            self.unknown_payload_type_counts["event_msg/item_completed/McpToolCall#invalid"] += 1
+            return
+        status = item.get("status")
+        if exact_wire(status, MCP_TOOL_CALL_NON_TERMINAL_STATUSES):
+            self.unknown_payload_type_counts["event_msg/item_completed/McpToolCall#non_terminal_status"] += 1
+            return
+        if not exact_wire(status, MCP_TOOL_CALL_TERMINAL_STATUSES):
+            self.unknown_payload_type_counts["event_msg/item_completed/McpToolCall#unsupported_status"] += 1
+            return
+        self.mcp_tool_calls_recognized += 1
+
     # -- post processing ---------------------------------------------------
 
     def _finalize(self) -> None:
+        self._resolve_turn_terminal_outcomes()
         self._classify_user_records()
         self._separate_attachment_envelopes()
         self._pair_command_executions()
         self._pair_file_changes()
+
+    def _resolve_turn_terminal_outcomes(self) -> None:
+        for turn_id in self.turn_order:
+            if turn_id not in self.turn_aborted or turn_id not in self.turn_completed:
+                continue
+            del self.turn_completed[turn_id]
+            self.turn_outcome_conflicts[turn_id] = {
+                "turn_id": turn_id,
+                "resolved_outcome": "aborted",
+                "abort_reason": self.turn_aborted[turn_id]["reason"],
+            }
+            self.warnings.append(
+                "turn %s records both task_complete and a valid turn_aborted; the abort is the terminal outcome, so the turn is not counted as completed" % turn_id
+            )
 
     def _separate_attachment_envelopes(self) -> None:
         """Keep Codex-composed attachment wrappers out of the Owner's words.
@@ -4425,9 +4520,11 @@ def render_markdown(context: Dict[str, Any]) -> str:
         completed = turn_id in model.turn_completed
         detail = model.turn_completed.get(turn_id) or {}
         duration = detail.get("duration_ms")
-        add("- Turn %d `%s` — completed=%s%s"
+        abort = model.turn_aborted.get(turn_id)
+        add("- Turn %d `%s` — completed=%s%s%s"
             % (turn_index, turn_id[:8], "true" if completed else "false",
-               ", duration=%.1fs" % (duration / 1000.0) if duration else ""))
+               ", duration=%.1fs" % (duration / 1000.0) if duration else "",
+               ", aborted=%s" % abort["reason"] if abort else ""))
     add("")
 
     # -- Owner messages ----------------------------------------------------
@@ -4811,6 +4908,14 @@ def build_receipt(context: Dict[str, Any]) -> Dict[str, Any]:
             "turn_count": len(model.turn_order),
             "completed_turn_count": len(model.turn_completed),
             "partial_turn_ids": partial_turns,
+            "aborted_turns": [
+                {"turn_id": turn, "reason": model.turn_aborted[turn]["reason"]}
+                for turn in model.turn_order if turn in model.turn_aborted
+            ],
+            "turn_outcome_conflicts": [
+                model.turn_outcome_conflicts[turn] for turn in model.turn_order
+                if turn in model.turn_outcome_conflicts
+            ],
             "models": sorted(
                 set(str(turn.get("model")) for turn in model.turn_contexts.values()
                     if turn.get("model"))
@@ -4909,6 +5014,9 @@ def build_receipt(context: Dict[str, Any]) -> Dict[str, Any]:
             ),
             "duplicate_logical_records_deduped": duplicates_deduped,
             "unbound_records": model.unbound_records,
+            "mcp_tool_call_records_recognized": model.mcp_tool_calls_recognized,
+            "turn_aborts_unbound": len(model.unbound_turn_aborts),
+            "turn_outcome_conflicts": len(model.turn_outcome_conflicts),
         },
         "duplicate_breakdown": dict(model.duplicate_breakdown),
         "reasoning_selection": reasoning,
@@ -4961,6 +5069,7 @@ def build_receipt(context: Dict[str, Any]) -> Dict[str, Any]:
         "partial_state": {
             "all_turns_completed": not partial_turns,
             "partial_turn_count": len(partial_turns),
+            "aborted_turn_count": len(model.turn_aborted),
             "final_answer_present": any(
                 message.get("phase") == "final_answer"
                 for message in model.assistant_messages
