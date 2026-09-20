@@ -130,14 +130,18 @@ class SchemaLifecycleCompatibility(ExporterTestCase):
             ("Completed", "unsupported_status"),
             (" completed ", "unsupported_status"),
         ]
-        for status, suffix in cases:
+        for index, (status, suffix) in enumerate(cases):
             with self.subTest(status=status):
+                # Isolate each case's output. Package selection is path-sorted,
+                # while Python string hashes are intentionally randomized across
+                # processes; a hash-derived filename would make this regression
+                # read a different case's receipt nondeterministically.
+                self.output = self.root / ("out-status-%02d" % index)
                 builder = basic_builder()
                 add_mcp(builder, status=status)
                 builder.task_complete()
                 _, receipt = self.export(builder.write(
-                    self.sessions, filename="rollout-%s-%s.jsonl"
-                    % (builder.session_id, abs(hash(status)))
+                    self.sessions, filename="rollout-status-%02d.jsonl" % index
                 ))
                 self.assertEqual(receipt["export_status"], exporter.STATUS_DEGRADED)
                 key = "event_msg/item_completed/McpToolCall#%s" % suffix
