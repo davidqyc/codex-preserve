@@ -36,6 +36,10 @@ class ClaudeSourceParserContract(unittest.TestCase):
     def test_linear_cli_is_eligible_without_session_end_inference(self):
         result = parsed("linear_cli")
         self.assertEqual((result.completeness, result.entrypoint), ("COMPLETE", "cli"))
+        self.assertTrue(result.source_stable)
+        self.assertEqual(len(result.source_sha256), 64)
+        self.assertEqual(result.source_size_bytes,
+                         (ROOT / "linear_cli.jsonl").stat().st_size)
         self.assertEqual(result.active_head_id, None)
         self.assertEqual(result.node_count, 2)
         self.assertEqual(record(result, "user").blocks[0].text, "synthetic user text")
@@ -179,6 +183,9 @@ class ClaudeSourceParserContract(unittest.TestCase):
                 result = parse_claude_session(path)
         self.assertEqual(result.completeness, "NON_COMPLETE")
         self.assertIn("SOURCE_CHANGED", codes(result))
+        self.assertFalse(result.source_stable)
+        self.assertIsNone(result.source_sha256)
+        self.assertIsNone(result.source_size_bytes)
         self.assertEqual(record(result, "user").blocks[0].text,
                          "synthetic user text")
 

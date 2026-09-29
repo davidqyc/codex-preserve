@@ -22,6 +22,7 @@ EXPECTED_JSONL = {
     "mixed_entrypoint.jsonl",
     "parallel_stale_leaf_cli.jsonl",
     "phantom_parent_after_resume_cli.jsonl",
+    "persisted_ui_lag_possible_cli.jsonl",
     "sensitive_canaries_cli.jsonl",
     "stale_last_prompt_cli.jsonl",
     "rewound_last_prompt_cli.jsonl",
