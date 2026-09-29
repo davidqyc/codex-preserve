@@ -1,0 +1,2 @@
+{"type":"user","uuid":"user-1","parentUuid":null,"isSidechain":false,"sessionId":"session-synthetic-sdk","entrypoint":"sdk-cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic SDK prompt"}}
+{"type":"assistant","uuid":"assistant-1","parentUuid":"user-1","isSidechain":false,"sessionId":"session-synthetic-sdk","entrypoint":"sdk-cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"text","text":"synthetic SDK answer"}],"stop_reason":"end_turn"}}

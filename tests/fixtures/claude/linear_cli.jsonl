@@ -1,0 +1,3 @@
+{"type":"user","uuid":"user-1","isSidechain":false,"parentUuid":null,"sessionId":"session-synthetic-linear","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic user text"}}
+{"type":"assistant","uuid":"assistant-1","isSidechain":false,"parentUuid":"user-1","sessionId":"session-synthetic-linear","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"text","text":"synthetic assistant text"}],"stop_reason":"end_turn"}}
+{"type":"last-prompt","sessionId":"session-synthetic-linear","leafUuid":"assistant-1","lastPrompt":"synthetic user text"}

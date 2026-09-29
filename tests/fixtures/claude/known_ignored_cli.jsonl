@@ -1,0 +1,6 @@
+{"type":"user","uuid":"user-1","parentUuid":null,"isSidechain":false,"sessionId":"session-synthetic-known-ignored","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic visible user text"}}
+{"type":"queue-operation","operation":"enqueue","sessionId":"session-synthetic-known-ignored","content":"SYNTHETIC_QUEUE_BODY_CANARY"}
+{"type":"file-history-snapshot","messageId":"synthetic-message","snapshot":{"syntheticFile":"SYNTHETIC_FILE_HISTORY_CANARY"},"isSnapshotUpdate":false}
+{"type":"attachment","uuid":"attachment-1","parentUuid":"user-1","isSidechain":false,"sessionId":"session-synthetic-known-ignored","entrypoint":"cli","version":"2.1.synthetic","attachment":{"type":"total_tokens_reminder","text":"SYNTHETIC_ATTACHMENT_BODY_CANARY"}}
+{"type":"assistant","uuid":"assistant-1","parentUuid":"attachment-1","isSidechain":false,"sessionId":"session-synthetic-known-ignored","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"text","text":"synthetic visible assistant text"}],"stop_reason":"end_turn"},"toolUseResult":{"stdout":"SYNTHETIC_IGNORED_STDOUT_CANARY","stderr":"SYNTHETIC_IGNORED_STDERR_CANARY"}}
+{"type":"last-prompt","sessionId":"session-synthetic-known-ignored","leafUuid":"user-1","lastPrompt":"SYNTHETIC_LAST_PROMPT_CANARY"}

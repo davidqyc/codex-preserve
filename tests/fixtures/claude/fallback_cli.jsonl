@@ -1,0 +1,3 @@
+{"type":"user","uuid":"user-1","parentUuid":null,"isSidechain":false,"sessionId":"session-synthetic-fallback","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic visible user text"}}
+{"type":"assistant","uuid":"assistant-1","parentUuid":"user-1","isSidechain":false,"sessionId":"session-synthetic-fallback","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"fallback","from":{"model":"synthetic-old"},"to":{"model":"synthetic-new"}},{"type":"text","text":"synthetic visible assistant text"}],"stop_reason":"end_turn"}}
+{"type":"last-prompt","sessionId":"session-synthetic-fallback","leafUuid":"assistant-1","lastPrompt":"synthetic visible user text"}
