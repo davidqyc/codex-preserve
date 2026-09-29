@@ -68,6 +68,16 @@ class ClaudePayloadContract(unittest.TestCase):
         self.assertFalse(ended.coverage.session_terminal_attested)
         self.assertFalse(ended.coverage.ui_completeness_attested)
 
+    def test_graph_and_source_provenance_must_be_bound(self):
+        source_a = parse_claude_session(ROOT / "linear_cli.jsonl")
+        source_b = parse_claude_session(ROOT / "persisted_ui_lag_possible_cli.jsonl")
+        graph_a = build_readable_graph(source_a)
+        self.assertEqual((source_a.completeness, source_a.entrypoint),
+                         (source_b.completeness, source_b.entrypoint))
+        with self.assertRaisesRegex(
+                ValueError, "graph does not match the supplied source ParseResult"):
+            build_claude_payload(graph_a, source_b)
+
     def test_source_changed_and_unreadable_have_no_attested_identity(self):
         source = parse_claude_session(ROOT / "linear_cli.jsonl")
         changed = replace(source, source_stable=False,

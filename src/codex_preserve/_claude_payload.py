@@ -14,7 +14,7 @@ from typing import Optional, Tuple
 
 from ._claude_readable import (
     ReadableBranchPoint, ReadableDiagnosticSummary, ReadableEvent,
-    ReadableGraph, ReadableLeafHint, ReadableNode,
+    ReadableGraph, ReadableLeafHint, ReadableNode, build_readable_graph,
 )
 from ._claude_source import ParseResult
 
@@ -98,14 +98,15 @@ def build_claude_payload(graph: ReadableGraph,
     """Project G4b graph plus only G4a's attested snapshot facts.
 
     The caller supplies the G4a result used to build ``graph``. This function
-    reads only its classification and snapshot fields; it never reads records,
-    diagnostics, a source path, or any local file.
+    validates the graph against that already-safe ParseResult so snapshot
+    provenance cannot be paired with content from another source. It never
+    reopens a source path or reads raw JSONL bytes.
     """
     if not isinstance(graph, ReadableGraph) or not isinstance(source, ParseResult):
         raise TypeError("expected Claude ReadableGraph and ParseResult")
-    if (graph.source_completeness != source.completeness or
-            graph.source_entrypoint != source.entrypoint):
-        raise ValueError("graph and source classification disagree")
+    expected_graph = build_readable_graph(source)
+    if graph != expected_graph:
+        raise ValueError("graph does not match the supplied source ParseResult")
     if source.source_stable:
         if source.source_sha256 is None or source.source_size_bytes is None:
             raise ValueError("stable source lacks snapshot identity")
