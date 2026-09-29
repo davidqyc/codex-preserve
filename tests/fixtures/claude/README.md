@@ -1,6 +1,6 @@
 # Claude vNext synthetic source fixtures
 
-Status: pre-adapter contract fixtures. These files do not mean the released product supports Claude yet.
+Status: internal parser contract fixtures. These files do not mean the released product supports Claude yet.
 
 Every fixture in this directory is hand-authored synthetic data. No real Claude transcript, project name, path, account identifier, prompt, tool output, or session identifier was copied or anonymized into this repository.
 
@@ -25,7 +25,7 @@ Private reconnaissance emitted aggregate structure only. It established enough t
 - UUID-bearing conversation records form a parent-linked `uuid` / `parentUuid` graph; branching exists;
 - append order alone is not a conversation model;
 - `last-prompt.leafUuid` is useful metadata but is not a universal active-leaf authority;
-- the first implementation must select a deterministic persisted main-chain path from the parent graph and fail visibly on ambiguity, cycles or missing parents;
+- the G4a parser preserves persisted graph facts and fails visibly on ambiguity, cycles or missing parents; main-chain selection belongs to a later stage;
 - compaction uses a `compact_boundary` plus an `isCompactSummary` record; summaries must be labelled as summaries rather than ordinary user prompts;
 - no reliable session-level terminal marker has been established; message `stop_reason` values must not be inflated into “the session is finished”;
 - source coverage and session terminal state are separate concepts;
@@ -83,7 +83,8 @@ Project-directory names and local source paths are privacy-sensitive coordinates
 
 - `linear_cli.jsonl` — ordinary linear CLI conversation.
 - `branching_cli.jsonl` — explicit parent-graph branching.
-- `stale_last_prompt_cli.jsonl` — `last-prompt.leafUuid` is not the final persisted main-chain node.
+- `stale_last_prompt_cli.jsonl` — a historical `last-prompt.leafUuid` has persisted descendants and is retained only as a pointer fact.
+- `rewound_last_prompt_cli.jsonl` — an explicit/rewound pointer intentionally targets an older persisted node; active-head interpretation remains deferred.
 - `compaction_cli.jsonl` — compact boundary plus labelled compact summary.
 - `known_ignored_cli.jsonl` — known bookkeeping/control material that must not be copied raw.
 - `fallback_cli.jsonl` — a known non-text content block that is intentionally not rendered.
@@ -94,5 +95,6 @@ Project-directory names and local source paths are privacy-sensitive coordinates
 - `mixed_entrypoint.jsonl` — mixed entrypoints are unsupported.
 - `unsupported_sdk_cli.jsonl` — an unclaimed entrypoint is refused.
 - `truncated_tail_cli.jsonl` — malformed/truncated tail fails visibly.
+- `phantom_parent_after_resume_cli.jsonl` — a resumed user has a missing parent while its attachment and assistant descendants persist.
 
 These fixtures are provider-specific. They are not a generic conversation schema.
