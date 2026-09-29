@@ -41,7 +41,7 @@ from pathlib import Path
 from typing import Any, Dict, FrozenSet, List, Optional, Sequence, Tuple
 from urllib.parse import quote
 
-from .shared_core import (
+from ._shared_core import (
     atomic_write_bytes,
     json_bytes as _json_bytes,
     safe_package_member as _safe_package_member,
