@@ -24,10 +24,11 @@ already-persisted local Codex session and you care whether every
 manifest-attested exported file is still present and byte-identical later.
 
 It is deliberately not a transcript viewer, sync tool, or restore/import
-mechanism. If all you need is a browsable or shareable HTML transcript, a
-transcript exporter is a better fit. `codex-preserve` is for preservation,
-provenance and manifest-relative integrity, with read-only source behavior and
-fail-closed verification.
+mechanism. If all you need is a Markdown copy of the current TUI conversation,
+Codex CLI 0.148.0+ already includes `/export`, which can save to the clipboard
+or a file. `codex-preserve` is for preservation, provenance and
+manifest-relative integrity, with read-only source behavior and fail-closed
+verification.
 
 **Not affiliated with OpenAI.** `codex-preserve` is an independent, unofficial
 tool. It is not affiliated with, endorsed by, sponsored by, or certified by
@@ -89,6 +90,7 @@ cases.
 ## What it does not do
 
 - It does not modify, archive, unarchive, delete or move Codex sessions.
+- It does not restore, reindex or repair Codex history.
 - It makes no model call and no network call. There is no daemon, no hook, no
   telemetry and no event database. It does run local read-only `git` queries by
   default — see [What it reads](#what-it-reads).
