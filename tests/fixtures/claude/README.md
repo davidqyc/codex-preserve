@@ -84,6 +84,7 @@ Project-directory names and local source paths are privacy-sensitive coordinates
 - `linear_cli.jsonl` — ordinary linear CLI conversation.
 - `branching_cli.jsonl` — explicit parent-graph branching.
 - `stale_last_prompt_cli.jsonl` — a historical `last-prompt.leafUuid` has persisted descendants and is retained only as a pointer fact.
+- `parallel_stale_leaf_cli.jsonl` — a non-explicit pointer targets a parallel tool-result branch while later complete readable answers remain persisted.
 - `rewound_last_prompt_cli.jsonl` — an explicit/rewound pointer intentionally targets an older persisted node; active-head interpretation remains deferred.
 - `compaction_cli.jsonl` — compact boundary plus labelled compact summary.
 - `known_ignored_cli.jsonl` — known bookkeeping/control material that must not be copied raw.
