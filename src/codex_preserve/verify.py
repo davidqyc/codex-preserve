@@ -56,6 +56,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from . import exporter
+from . import _v3_package
 
 # Exit codes. Nonzero for anything that is not a proven-intact package.
 EXIT_PASS = 0
@@ -317,6 +318,11 @@ def verify_package(package_dir: Path) -> Dict[str, Any]:
 
     schema = manifest.get("package_schema_version")
     receipt["package_schema_version"] = schema
+    if schema == _v3_package.PACKAGE_SCHEMA_VERSION:
+        v3 = _v3_package.verify_v3_package(resolved)
+        v3["package"] = display.normalize_paths(v3["package"])
+        v3["expected_package_schema_version"] = _v3_package.PACKAGE_SCHEMA_VERSION
+        return v3
     if schema not in exporter.RECOGNIZED_PACKAGE_SCHEMA_VERSIONS:
         # A verifier that cannot interpret the manifest schema must not report
         # PASS: a future schema could attest members through keys this build
@@ -483,8 +489,12 @@ def verify_package(package_dir: Path) -> Dict[str, Any]:
 
 def render_human(receipt: Dict[str, Any]) -> str:
     """One short human-readable block; the reason is always stated."""
+    tool = receipt.get("tool") or "codex-preserve"
+    transfer = receipt.get("transfer_zip")
+    if transfer is None:
+        transfer = receipt.get("handoff_zip", {}).get("verdict", "not_checked")
     lines = [
-        "codex-preserve verify: %s" % receipt["verdict"],
+        "%s verify: %s" % (tool, receipt["verdict"]),
         "  package: %s" % receipt["package"],
         "  schema:  %s (expected %s)" % (
             receipt.get("package_schema_version"),
@@ -492,7 +502,7 @@ def render_human(receipt: Dict[str, Any]) -> str:
         ),
         "  members: %d/%d verified" % (receipt["members_verified"],
                                        receipt["members_attested"]),
-        "  transfer zip: %s" % receipt["handoff_zip"]["verdict"],
+        "  transfer zip: %s" % transfer,
     ]
     for row in receipt["reasons"]:
         member = row.get("member")
