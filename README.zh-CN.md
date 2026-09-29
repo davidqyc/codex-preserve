@@ -24,7 +24,11 @@
 
 这些情况，都适合用 `codex-preserve`。
 
-它**不是**对话浏览器（transcript viewer）、同步工具，也不是恢复 / 导入（restore/import）工具。如果你只是想导出一份方便浏览或分享的 HTML 对话记录，普通的 transcript exporter 更合适。`codex-preserve` 专注于更底层的事情：长期保存、来源追踪（provenance）、基于清单的完整性校验，以及安全兜底（fail-closed）的验证行为。
+它**不是**对话浏览器（transcript viewer）、同步工具，也不是恢复 / 导入（restore/import）工具。
+
+如果你只是想把当前 TUI 对话保存成 Markdown，Codex CLI 0.148.0+ 已经内置 `/export`，可以保存到剪贴板或文件。
+
+`codex-preserve` 处理的是另一件事：把重要会话独立保存下来，保留来源信息（provenance），并在以后按 manifest 重新校验完整性；整个过程对源会话只读，并采用安全兜底（fail-closed）的验证策略。
 
 **与 OpenAI 无隶属关系。** `codex-preserve` 是独立、非官方工具，不隶属于 OpenAI，也未获得 OpenAI 的背书、赞助或认证；它不是 OpenAI 产品或 Codex 官方组件，也不使用 OpenAI Logo 或其他视觉品牌元素。
 
@@ -69,6 +73,7 @@ cd codex-preserve
 ## 它不会做什么
 
 - 不修改、不 archive、不 unarchive、不删除，也不移动 Codex 会话。
+- 不恢复、不重新索引，也不修复 Codex 历史记录。
 - 不调用模型，也不进行网络请求；没有常驻 daemon、hook、telemetry 或 event database。默认会执行少量本地只读 `git` 查询，见后文“它会读取什么”。
 - 不解码不透明或加密的推理内容（opaque / encrypted reasoning）；这类内容只统计数量，不做内容还原。
 - 不做数字签名。manifest 提供的是基于 SHA-256 的完整性声明，不是 cryptographic signature，也不能证明这个包是谁生成的。
