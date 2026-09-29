@@ -16,7 +16,7 @@ The first Claude adapter is intentionally narrow:
 - no `claude.ai` cloud-chat ingestion;
 - no restore, reindex, resume, import, sync, hook, daemon or bulk export.
 
-The initial coverage target is the **user-visible main conversation**, not reconstruction of the model's full private context or every sidecar.
+The initial coverage target is **safe readable content persisted in the selected top-level JSONL**. A stable file and `COMPLETE` parser classification do not attest that the current UI's visible replies have been flushed, or that a session has ended.
 
 ## Structural contract frozen before implementation
 
@@ -98,5 +98,6 @@ Project-directory names and local source paths are privacy-sensitive coordinates
 - `unsupported_sdk_cli.jsonl` — an unclaimed entrypoint is refused.
 - `truncated_tail_cli.jsonl` — malformed/truncated tail fails visibly.
 - `phantom_parent_after_resume_cli.jsonl` — a resumed user has a missing parent while its attachment and assistant descendants persist.
+- `persisted_ui_lag_possible_cli.jsonl` — valid, stable persisted user and metadata rows with no assistant row; parser eligibility cannot attest to what the UI displayed.
 
 These fixtures are provider-specific. They are not a generic conversation schema.

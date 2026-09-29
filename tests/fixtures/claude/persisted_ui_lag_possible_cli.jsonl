@@ -1,0 +1,4 @@
+{"type":"user","uuid":"user-ui-lag","parentUuid":null,"isSidechain":false,"sessionId":"session-synthetic-ui-lag","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic persisted user request"}}
+{"type":"attachment","uuid":"attachment-ui-lag","parentUuid":"user-ui-lag","isSidechain":false,"sessionId":"session-synthetic-ui-lag","entrypoint":"cli","version":"2.1.synthetic","attachment":{"type":"total_tokens_reminder","text":"SYNTHETIC_UI_LAG_ATTACHMENT_CANARY"}}
+{"type":"queue-operation","operation":"enqueue","sessionId":"session-synthetic-ui-lag","content":"SYNTHETIC_UI_LAG_METADATA_CANARY"}
+{"type":"last-prompt","sessionId":"session-synthetic-ui-lag","leafUuid":"user-ui-lag","lastPrompt":"SYNTHETIC_UI_LAG_LAST_PROMPT_CANARY"}

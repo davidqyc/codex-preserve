@@ -97,6 +97,9 @@ class ParseResult:
     node_count: int
     branch_count: int
     active_head_id: None = None  # selection belongs to a later stage
+    source_stable: bool = False
+    source_sha256: Optional[str] = None  # stable snapshot content identity only
+    source_size_bytes: Optional[int] = None
 
 
 def bounded_safe_view(result: ParseResult) -> dict:
@@ -257,6 +260,9 @@ def parse_claude_session(path: Path) -> ParseResult:
     pending_results: List[Tuple[int, int, str]] = []
     entrypoints = set()
     session_ids = set()
+    source_stable = False
+    source_sha256 = None
+    source_size_bytes = None
     source = Path(path)
     if source.suffix != ".jsonl" or source.parent.name in ("subagents", "tool-results"):
         _diagnose(diagnostics, "INVALID_SOURCE_SELECTION", 0)
@@ -392,6 +398,10 @@ def parse_claude_session(path: Path) -> ParseResult:
                       (before, after, verify_before, verify_after, current)}
         if len(identities) != 1 or parsed_hash.digest() != verified_hash.digest():
             _diagnose(diagnostics, "SOURCE_CHANGED", 0)
+        else:
+            source_stable = True
+            source_sha256 = parsed_hash.hexdigest()
+            source_size_bytes = before.st_size
     except OSError:
         _diagnose(diagnostics, "SOURCE_UNREADABLE", 0)
     if len(session_ids) > 1:
@@ -491,4 +501,7 @@ def parse_claude_session(path: Path) -> ParseResult:
     # A branch has no selected active path in G4a, so it also lacks COMPLETE.
     completeness = "NON_COMPLETE" if blocking or branch_count else "COMPLETE"
     return ParseResult(tuple(records), tuple(diagnostics), completeness,
-                       entrypoint_state, len(node_ids), branch_count)
+                       entrypoint_state, len(node_ids), branch_count,
+                       source_stable=source_stable,
+                       source_sha256=source_sha256,
+                       source_size_bytes=source_size_bytes)
