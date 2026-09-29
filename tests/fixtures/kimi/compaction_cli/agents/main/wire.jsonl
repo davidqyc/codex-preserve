@@ -1,0 +1,6 @@
+{"type":"metadata","protocol_version":"1.4","created_at":1790726400000}
+{"type":"full_compaction.begin","time":1790726401000,"source":"auto"}
+{"type":"context.apply_compaction","time":1790726401001,"compactedCount":4,"keptUserMessageCount":1,"tokensBefore":100,"tokensAfter":20,"summary":"SYNTHETIC_KIMI_COMPACTION_SUMMARY_CANARY","contextSummary":"SYNTHETIC_KIMI_CONTEXT_SUMMARY_CANARY"}
+{"type":"full_compaction.complete","time":1790726401002}
+{"type":"context.append_message","time":1790726402000,"message":{"role":"user","origin":{"kind":"user"},"content":[{"type":"text","text":"synthetic after compaction"}],"toolCalls":[]}}
+{"type":"context.append_loop_event","time":1790726402001,"event":{"type":"content.part","turnId":"turn-synthetic-compact","step":1,"stepUuid":"step-synthetic-compact","uuid":"text-synthetic-compact","part":{"type":"text","text":"synthetic answer after compaction"}}}

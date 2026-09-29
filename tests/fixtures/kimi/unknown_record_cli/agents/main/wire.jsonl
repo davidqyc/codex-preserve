@@ -1,0 +1,3 @@
+{"type":"metadata","protocol_version":"1.4","created_at":1790726400000}
+{"type":"context.append_message","time":1790726401000,"message":{"role":"user","origin":{"kind":"user"},"content":[{"type":"text","text":"synthetic hello"}],"toolCalls":[]}}
+{"type":"future.kimi.record","time":1790726401001,"futureValue":"SYNTHETIC_KIMI_UNKNOWN_CANARY"}
