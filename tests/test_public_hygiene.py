@@ -211,6 +211,12 @@ class ScanStaysNarrowEnoughToPublish(unittest.TestCase):
         self.assertEqual(
             self._clean('WORKSPACE = "/Users/testowner/Documents/demo"\n'), [])
 
+    def test_linked_worktree_git_pointer_is_metadata(self):
+        (self.root / ".git").write_text(
+            "gitdir: " + synthetic_home_path() + "/worktrees/example\n",
+            encoding="utf-8")
+        self.assertEqual(self._clean("public source\n"), [])
+
     def test_a_repository_qualified_upstream_issue_passes(self):
         self.assertEqual(
             self._clean("upstream openai/codex#24289 asks the same\n"), [])

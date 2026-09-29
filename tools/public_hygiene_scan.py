@@ -171,6 +171,10 @@ def iter_files(root: Path) -> Iterable[Path]:
 
     def walk(directory: Path) -> None:
         for child in sorted(directory.iterdir(), key=lambda item: item.name):
+            # A linked Git worktree has a .git pointer file instead of the
+            # metadata directory already excluded by SKIP_DIR_NAMES.
+            if child.name == ".git":
+                continue
             if child.is_symlink():
                 entries.append(child)
                 continue

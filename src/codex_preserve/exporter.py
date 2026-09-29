@@ -41,6 +41,15 @@ from pathlib import Path
 from typing import Any, Dict, FrozenSet, List, Optional, Sequence, Tuple
 from urllib.parse import quote
 
+from .shared_core import (
+    atomic_write_bytes,
+    json_bytes as _json_bytes,
+    safe_package_member as _safe_package_member,
+    sha256_bytes,
+    sha256_file,
+    sha256_text,
+)
+
 EXPORTER_VERSION = "2.2.1"
 PACKAGE_SCHEMA_VERSION = "2.2"
 # The only package schema versions this code can actually interpret: 2.2 is
@@ -411,25 +420,6 @@ class Privacy:
 # --------------------------------------------------------------------------
 # Small helpers
 # --------------------------------------------------------------------------
-
-
-def sha256_file(path: Path, chunk: int = 1024 * 1024) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        while True:
-            block = handle.read(chunk)
-            if not block:
-                break
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def sha256_text(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def sha256_bytes(payload: bytes) -> str:
-    return hashlib.sha256(payload).hexdigest()
 
 
 def source_identity(path: Path) -> Dict[str, Any]:
@@ -5320,37 +5310,6 @@ def run_export(options: argparse.Namespace) -> Dict[str, Any]:
     return context
 
 
-def atomic_write_bytes(path: Path, payload: bytes,
-                       staging_dir: Optional[Path] = None) -> None:
-    """Publish one complete file with a temp file and a replace.
-
-    The temp is always in the destination parent. Package destinations are
-    already inside the private assembly tree, so failures leave no trace in
-    the canonical package. ``staging_dir`` remains a compatibility argument.
-    """
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_dir = path.parent
-    temporary_dir.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=".codex-write-",
-        suffix=".tmp",
-        dir=str(temporary_dir),
-    )
-    temporary_path = Path(temporary_name)
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(str(temporary_path), str(path))
-    except BaseException:
-        try:
-            temporary_path.unlink()
-        except OSError:
-            pass
-        raise
-
-
 def atomic_write_text(path: Path, text: str,
                       staging_dir: Optional[Path] = None) -> None:
     atomic_write_bytes(path, text.encode("utf-8"), staging_dir=staging_dir)
@@ -5379,21 +5338,9 @@ def package_staging_area(output_dir: Path, package_dirname: str):
             pass
 
 
-def _json_bytes(value: Dict[str, Any]) -> bytes:
-    return (json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False)
-            + "\n").encode("utf-8")
-
-
 def is_volatile_finder_metadata(name: str) -> bool:
     """Is this directory entry Finder display metadata rather than payload?"""
     return name == VOLATILE_FINDER_METADATA_FILENAME
-
-
-def _safe_package_member(member: str) -> bool:
-    if not member or member.startswith(("/", "\\")) or "\\" in member:
-        return False
-    parts = member.split("/")
-    return all(part not in ("", ".", "..") for part in parts)
 
 
 def _manifest_payload_row(item: Dict[str, Any], kind: str) -> Dict[str, Any]:
