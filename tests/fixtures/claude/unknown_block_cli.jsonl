@@ -1,0 +1,3 @@
+{"type":"user","uuid":"user-1","parentUuid":null,"sessionId":"session-synthetic-unknown-block","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic known text"}}
+{"type":"assistant","uuid":"assistant-1","parentUuid":"user-1","sessionId":"session-synthetic-unknown-block","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"future_block","futureValue":"SYNTHETIC_UNKNOWN_BLOCK_CANARY"}],"stop_reason":"end_turn"}}
+{"type":"last-prompt","sessionId":"session-synthetic-unknown-block","leafUuid":"assistant-1","lastPrompt":"synthetic known text"}

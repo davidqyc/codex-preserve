@@ -1,0 +1,7 @@
+{"type":"user","uuid":"user-root","parentUuid":null,"sessionId":"session-synthetic-branch","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic root"}}
+{"type":"assistant","uuid":"assistant-root","parentUuid":"user-root","sessionId":"session-synthetic-branch","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"text","text":"synthetic first answer"}],"stop_reason":"end_turn"}}
+{"type":"user","uuid":"user-branch-a","parentUuid":"assistant-root","sessionId":"session-synthetic-branch","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic branch A"}}
+{"type":"assistant","uuid":"assistant-branch-a","parentUuid":"user-branch-a","sessionId":"session-synthetic-branch","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"text","text":"synthetic answer A"}],"stop_reason":"end_turn"}}
+{"type":"user","uuid":"user-branch-b","parentUuid":"assistant-root","sessionId":"session-synthetic-branch","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic branch B"}}
+{"type":"assistant","uuid":"assistant-branch-b","parentUuid":"user-branch-b","sessionId":"session-synthetic-branch","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"text","text":"synthetic answer B"}],"stop_reason":"end_turn"}}
+{"type":"last-prompt","sessionId":"session-synthetic-branch","leafUuid":"assistant-branch-b","lastPrompt":"synthetic branch B"}
