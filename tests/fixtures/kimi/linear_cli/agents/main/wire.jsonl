@@ -1,0 +1,6 @@
+{"type":"metadata","protocol_version":"1.4","created_at":1790726400000}
+{"type":"context.append_message","time":1790726401000,"message":{"role":"user","origin":{"kind":"user"},"content":[{"type":"text","text":"synthetic hello"}],"toolCalls":[]}}
+{"type":"turn.prompt","time":1790726401001,"origin":{"kind":"user"},"input":[{"type":"text","text":"synthetic hello"}]}
+{"type":"context.append_loop_event","time":1790726402000,"event":{"type":"step.begin","turnId":"turn-synthetic-1","step":1,"uuid":"step-synthetic-1"}}
+{"type":"context.append_loop_event","time":1790726402001,"event":{"type":"content.part","turnId":"turn-synthetic-1","step":1,"stepUuid":"step-synthetic-1","uuid":"part-synthetic-1","part":{"type":"text","text":"synthetic Kimi answer"}}}
+{"type":"context.append_loop_event","time":1790726402002,"event":{"type":"step.end","turnId":"turn-synthetic-1","step":1,"uuid":"step-synthetic-1","messageId":"message-synthetic-1","traceId":"trace-synthetic-1","finishReason":"stop","usage":{"inputOther":1,"inputCacheRead":0,"inputCacheCreation":0,"output":1},"llmClientConsumeMs":1,"llmFirstTokenLatencyMs":1,"llmRequestBuildMs":1,"llmServerDecodeMs":1,"llmServerFirstTokenMs":1,"llmStreamDurationMs":1}}
