@@ -87,6 +87,7 @@ Project-directory names and local source paths are privacy-sensitive coordinates
 - `parallel_stale_leaf_cli.jsonl` — a non-explicit pointer targets a parallel tool-result branch while later complete readable answers remain persisted.
 - `rewound_last_prompt_cli.jsonl` — an explicit/rewound pointer intentionally targets an older persisted node; active-head interpretation remains deferred.
 - `compaction_cli.jsonl` — compact boundary plus labelled compact summary.
+- `duplicate_replay_cli.jsonl` — repeated persisted occurrences reuse the same graph UUIDs without becoming a semantic branch.
 - `known_ignored_cli.jsonl` — known bookkeeping/control material that must not be copied raw.
 - `fallback_cli.jsonl` — a known non-text content block that is intentionally not rendered.
 - `unknown_record_cli.jsonl` — future top-level record blocks `COMPLETE`.

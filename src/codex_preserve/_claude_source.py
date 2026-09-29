@@ -402,27 +402,34 @@ def parse_claude_session(path: Path) -> ParseResult:
         if raw_uuid in node_ids:
             continue
         node_ids[raw_uuid] = "node-%06d" % (len(node_ids) + 1)
-    children: Dict[str, int] = {}
+    children: Dict[str, set] = {}
     parents: Dict[str, Optional[str]] = {}
+    parent_relations: Dict[str, Tuple[str, Optional[str]]] = {}
     seen_node_ids = set()
     for record_index, raw_uuid, raw_parent in raw_nodes:
         record = records[record_index]
         node_id = node_ids[raw_uuid]
-        if node_id in seen_node_ids:
+        duplicate = node_id in seen_node_ids
+        if duplicate:
             _diagnose(diagnostics, "DUPLICATE_UUID", record.line)
         seen_node_ids.add(node_id)
         if raw_parent is None:
             link, parent_id = "root", None
         elif raw_parent in node_ids:
             link, parent_id = "linked", node_ids[raw_parent]
-            children[parent_id] = children.get(parent_id, 0) + 1
+            children.setdefault(parent_id, set()).add(node_id)
         else:
             link, parent_id = "missing", None
             _diagnose(diagnostics, "GRAPH_LINK_GAP", record.line)
+        relation = (link, parent_id)
+        if duplicate and parent_relations.get(node_id) != relation:
+            _diagnose(diagnostics, "DUPLICATE_UUID_PARENT_CONFLICT", record.line)
+        elif node_id not in parent_relations:
+            parent_relations[node_id] = relation
+            parents[node_id] = parent_id
         records[record_index] = replace(record, node_id=node_id,
                                         parent_id=parent_id, parent_link=link)
-        parents[node_id] = parent_id
-    branch_count = sum(count > 1 for count in children.values())
+    branch_count = sum(len(child_ids) > 1 for child_ids in children.values())
     if branch_count:
         _diagnose(diagnostics, "GRAPH_BRANCH_PRESENT", 0)
     # Parent links have at most one edge each; walk chains without recursion.

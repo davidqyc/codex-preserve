@@ -111,7 +111,7 @@ def build_readable_graph(source: ParseResult) -> ReadableGraph:
     nodes = []
     events = []
     hints = []
-    children = defaultdict(list)
+    children = defaultdict(lambda: defaultdict(list))
     for ordinal, record in ordered:
         record_id = record_ids[ordinal]
         text_blocks = tuple(
@@ -131,8 +131,9 @@ def build_readable_graph(source: ParseResult) -> ReadableGraph:
                 record.kind if record.kind in ("user", "assistant") else None,
                 record.semantic_kind, record.policy, text_blocks,
             ))
-            if record.parent_link == "linked" and record.parent_id is not None:
-                children[record.parent_id].append(record_id)
+            if (record.parent_link == "linked" and
+                    record.parent_id is not None and record.node_id is not None):
+                children[record.parent_id][record.node_id].append(record_id)
 
         if record.kind == "last-prompt":
             hints.append(ReadableLeafHint(
@@ -158,17 +159,30 @@ def build_readable_graph(source: ParseResult) -> ReadableGraph:
                 ))
 
     source_line_by_record_id = {node.record_id: node.source_line for node in nodes}
+    branch_rows = []
+    for parent_id, child_groups in children.items():
+        if len(child_groups) <= 1:
+            continue
+        distinct_children = sorted(
+            child_groups.items(),
+            key=lambda pair: (
+                source_line_by_record_id[pair[1][0]], pair[0]
+            ),
+        )
+        branch_rows.append((
+            min(source_line_by_record_id[group[0]]
+                for _, group in distinct_children),
+            parent_id,
+            tuple(group[0] for _, group in distinct_children),
+        ))
     branches = tuple(
         ReadableBranchPoint(
             parent_id,
-            occurrences[parent_id][0] if len(occurrences[parent_id]) == 1 else None,
-            tuple(child_ids),
+            occurrences[parent_id][0]
+            if len(occurrences[parent_id]) == 1 else None,
+            child_record_ids,
         )
-        for parent_id, child_ids in sorted(
-            children.items(), key=lambda pair: (
-                source_line_by_record_id[pair[1][0]], pair[0]
-            ))
-        if len(child_ids) > 1
+        for _, parent_id, child_record_ids in sorted(branch_rows)
     )
     counts = Counter(item.code for item in source.diagnostics)
     gap_count = counts["GRAPH_LINK_GAP"]

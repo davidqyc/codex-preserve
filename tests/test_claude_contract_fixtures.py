@@ -15,6 +15,7 @@ TRUNCATED = "truncated_tail_cli.jsonl"
 EXPECTED_JSONL = {
     "branching_cli.jsonl",
     "compaction_cli.jsonl",
+    "duplicate_replay_cli.jsonl",
     "fallback_cli.jsonl",
     "known_ignored_cli.jsonl",
     "linear_cli.jsonl",

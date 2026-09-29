@@ -132,6 +132,20 @@ class ClaudeReadableGraphContract(unittest.TestCase):
         self.assertIsNone(result.leaf_hints[0].leaf_hint_explicit)
         self.assertEqual(texts(result).count("synthetic assistant text"), 2)
 
+    def test_persisted_duplicate_replay_is_not_a_false_branch(self):
+        result = graph("duplicate_replay_cli")
+        self.assertEqual(result.source_completeness, "NON_COMPLETE")
+        self.assertEqual(result.branch_count, 0)
+        self.assertEqual(result.branch_points, ())
+        self.assertEqual(texts(result), [
+            "synthetic replay user", "synthetic replay answer",
+            "synthetic replay user", "synthetic replay answer",
+        ])
+        self.assertEqual(len({node.record_id for node in result.nodes}), 4)
+        self.assertEqual(result.nodes[0].node_id, result.nodes[2].node_id)
+        self.assertEqual(result.nodes[1].node_id, result.nodes[3].node_id)
+        self.assertIn(("DUPLICATE_UUID", 2), result.diagnostics.counts_by_code)
+
     def test_duplicate_parent_occurrence_does_not_invent_record_edge(self):
         parsed = parse_claude_session(ROOT / "linear_cli.jsonl")
         duplicated = replace(parsed, records=parsed.records +
