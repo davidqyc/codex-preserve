@@ -197,6 +197,43 @@ class ClaudeSourceParserContract(unittest.TestCase):
         self.assertEqual(assistant.blocks[0].text, "synthetic answer after resume")
         self.assertNotEqual(resumed.parent_id, result.records[1].node_id)
 
+    def test_duplicate_replay_occurrences_do_not_create_false_branch(self):
+        result = parsed("duplicate_replay_cli")
+        self.assertEqual(result.completeness, "NON_COMPLETE")
+        self.assertEqual(result.node_count, 2)
+        self.assertEqual(result.branch_count, 0)
+        self.assertNotIn("GRAPH_BRANCH_PRESENT", codes(result))
+        self.assertEqual(
+            sum(item.code == "DUPLICATE_UUID" for item in result.diagnostics), 2)
+        nodes = [r.node_id for r in result.records if r.node_id is not None]
+        self.assertEqual(nodes[0], nodes[2])
+        self.assertEqual(nodes[1], nodes[3])
+
+    def test_duplicate_uuid_with_conflicting_parent_is_explicit(self):
+        rows = [
+            {"type": "user", "uuid": "u1", "parentUuid": None,
+             "sessionId": "session-synthetic-conflict", "entrypoint": "cli",
+             "message": {"role": "user", "content": "one"}},
+            {"type": "user", "uuid": "u2", "parentUuid": None,
+             "sessionId": "session-synthetic-conflict", "entrypoint": "cli",
+             "message": {"role": "user", "content": "two"}},
+            {"type": "assistant", "uuid": "a1", "parentUuid": "u1",
+             "sessionId": "session-synthetic-conflict", "entrypoint": "cli",
+             "message": {"role": "assistant", "content": [
+                 {"type": "text", "text": "answer"}], "stop_reason": "end_turn"}},
+            {"type": "assistant", "uuid": "a1", "parentUuid": "u2",
+             "sessionId": "session-synthetic-conflict", "entrypoint": "cli",
+             "message": {"role": "assistant", "content": [
+                 {"type": "text", "text": "answer"}], "stop_reason": "end_turn"}},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic.jsonl"
+            path.write_text("".join(json.dumps(row) + "\n" for row in rows),
+                            encoding="utf-8")
+            result = parse_claude_session(path)
+        self.assertEqual(result.completeness, "NON_COMPLETE")
+        self.assertIn("DUPLICATE_UUID_PARENT_CONFLICT", codes(result))
+
     def test_privacy_canaries_absent_from_every_safe_view(self):
         names = ("sensitive_canaries_cli", "known_ignored_cli",
                  "unknown_record_cli", "unknown_block_cli",
