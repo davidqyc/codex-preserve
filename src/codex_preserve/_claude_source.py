@@ -42,6 +42,7 @@ _RECORD_FIELDS = frozenset((
     "isSnapshotUpdate", "leafUuid", "lastPrompt", "title", "timestamp",
     "cwd", "gitBranch", "slug", "userType", "requestId", "isMeta",
     "sourceToolAssistantUUID", "permissionMode", "agentId", "teamName",
+    "explicit", "rewound",
 ))
 _MESSAGE_FIELDS = frozenset(("role", "content", "stop_reason", "id",
                              "model", "usage"))
@@ -81,6 +82,8 @@ class Record:
     stop_reason: Optional[str] = None  # message-level fact only
     blocks: Tuple[Block, ...] = ()
     leaf_hint_id: Optional[str] = None  # never an active-head decision
+    leaf_hint_explicit: Optional[bool] = None
+    leaf_hint_rewound: Optional[bool] = None
     sidecar_relation: Optional[str] = None
     referenced_sidecar_present: Optional[bool] = None
 
@@ -249,7 +252,7 @@ def parse_claude_session(path: Path) -> ParseResult:
     records: List[Record] = []
     diagnostics: List[Diagnostic] = []
     raw_nodes: List[Tuple[int, str, object]] = []
-    leaf_hints: List[Tuple[int, object]] = []
+    leaf_hints: List[Tuple[int, object, object, object]] = []
     tool_ids: Dict[str, str] = {}
     pending_results: List[Tuple[int, int, str]] = []
     entrypoints = set()
@@ -342,7 +345,16 @@ def parse_claude_session(path: Path) -> ParseResult:
                 else:
                     record = Record(line_no, policy, safe_kind)
                     if kind == "last-prompt":
-                        leaf_hints.append((len(records), raw.get("leafUuid")))
+                        explicit = raw.get("explicit")
+                        rewound = raw.get("rewound")
+                        if explicit is not None and not isinstance(explicit, bool):
+                            _diagnose(diagnostics, "INVALID_LEAF_HINT_FLAG", line_no)
+                            explicit = None
+                        if rewound is not None and not isinstance(rewound, bool):
+                            _diagnose(diagnostics, "INVALID_LEAF_HINT_FLAG", line_no)
+                            rewound = None
+                        leaf_hints.append((len(records), raw.get("leafUuid"),
+                                           explicit, rewound))
 
                 if kind in _GRAPH_TYPES or policy == UNKNOWN:
                     node_uuid = raw.get("uuid")
@@ -428,14 +440,19 @@ def parse_claude_session(path: Path) -> ParseResult:
             cursor = parents.get(cursor)
         checked.update(path_seen)
 
-    for record_index, raw_leaf in leaf_hints:
+    for record_index, raw_leaf, explicit, rewound in leaf_hints:
         record = records[record_index]
         leaf_id = node_ids.get(raw_leaf) if isinstance(raw_leaf, str) else None
         if leaf_id is None:
             _diagnose(diagnostics, "UNRESOLVED_LEAF_HINT", record.line)
         elif children.get(leaf_id, 0):
-            _diagnose(diagnostics, "STALE_LEAF_HINT", record.line)
-        records[record_index] = replace(record, leaf_hint_id=leaf_id)
+            _diagnose(diagnostics, "LEAF_HINT_HAS_DESCENDANTS", record.line)
+        records[record_index] = replace(
+            record,
+            leaf_hint_id=leaf_id,
+            leaf_hint_explicit=explicit,
+            leaf_hint_rewound=rewound,
+        )
 
     for line, block_index, raw_ref in pending_results:
         ref = tool_ids.get(raw_ref)
@@ -460,7 +477,8 @@ def parse_claude_session(path: Path) -> ParseResult:
         entrypoint_state = "unsupported"
     if entrypoint_state != "cli":
         _diagnose(diagnostics, "CLI_ENTRYPOINT_NOT_ESTABLISHED", 0)
-    blocking = any(item.code not in ("GRAPH_BRANCH_PRESENT", "STALE_LEAF_HINT",
+    blocking = any(item.code not in ("GRAPH_BRANCH_PRESENT",
+                                     "LEAF_HINT_HAS_DESCENDANTS",
                                      "SIDECAR_MISSING", "SIDECAR_UNQUERYABLE")
                    for item in diagnostics)
     # A branch has no selected active path in G4a, so it also lacks COMPLETE.

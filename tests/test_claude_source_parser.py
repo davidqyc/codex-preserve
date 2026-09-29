@@ -54,13 +54,23 @@ class ClaudeSourceParserContract(unittest.TestCase):
         self.assertEqual(users[1].parent_id, users[2].parent_id)
         self.assertNotEqual(users[1].node_id, users[2].node_id)
 
-    def test_stale_last_prompt_is_only_a_hint(self):
+    def test_last_prompt_with_descendants_is_only_a_hint(self):
         result = parsed("stale_last_prompt_cli")
         self.assertEqual(result.completeness, "COMPLETE")
-        self.assertIn("STALE_LEAF_HINT", codes(result))
+        self.assertIn("LEAF_HINT_HAS_DESCENDANTS", codes(result))
         hint = record(result, "last-prompt").leaf_hint_id
         later = [r for r in result.records if r.kind == "user"][1]
         self.assertEqual(later.parent_id, hint)
+        self.assertIsNone(result.active_head_id)
+
+    def test_rewind_pointer_flags_are_preserved_without_selecting_head(self):
+        result = parsed("rewound_last_prompt_cli")
+        self.assertEqual(result.completeness, "COMPLETE")
+        self.assertIn("LEAF_HINT_HAS_DESCENDANTS", codes(result))
+        hint = record(result, "last-prompt")
+        self.assertTrue(hint.leaf_hint_explicit)
+        self.assertTrue(hint.leaf_hint_rewound)
+        self.assertIsNotNone(hint.leaf_hint_id)
         self.assertIsNone(result.active_head_id)
 
     def test_compaction_summary_is_labelled(self):

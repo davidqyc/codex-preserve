@@ -1,0 +1,5 @@
+{"type":"user","uuid":"user-root","parentUuid":null,"isSidechain":false,"sessionId":"session-synthetic-rewind","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic root"}}
+{"type":"assistant","uuid":"assistant-root","parentUuid":"user-root","isSidechain":false,"sessionId":"session-synthetic-rewind","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"text","text":"synthetic root answer"}],"stop_reason":"end_turn"}}
+{"type":"user","uuid":"user-later","parentUuid":"assistant-root","isSidechain":false,"sessionId":"session-synthetic-rewind","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"user","content":"synthetic later prompt"}}
+{"type":"assistant","uuid":"assistant-later","parentUuid":"user-later","isSidechain":false,"sessionId":"session-synthetic-rewind","entrypoint":"cli","version":"2.1.synthetic","message":{"role":"assistant","content":[{"type":"text","text":"synthetic later answer"}],"stop_reason":"end_turn"}}
+{"type":"last-prompt","sessionId":"session-synthetic-rewind","leafUuid":"assistant-root","lastPrompt":"synthetic root","explicit":true,"rewound":true}
