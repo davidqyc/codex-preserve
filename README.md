@@ -57,6 +57,8 @@ session-preserve export claude --source ~/.claude/projects/.../<session>.jsonl -
 
 The default Claude Code store is under ~/.claude/projects, or $CLAUDE_CONFIG_DIR/projects when configured.
 
+If you keep long-lived Claude Code sessions, see [Claude Code session retention and independent preservation](docs/claude-code-session-backup.md).
+
 ### Kimi Code
 
 Select one current-format Kimi Code session directory:

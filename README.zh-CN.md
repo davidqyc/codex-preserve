@@ -68,6 +68,8 @@ session-preserve export claude --source ~/.claude/projects/.../<session>.jsonl -
 
 Claude Code 默认数据一般在 ~/.claude/projects；如果配置了 CLAUDE_CONFIG_DIR，则对应它下面的 projects。
 
+如果你会长期保留 Claude Code 会话，可以看这篇说明：[Claude Code session retention and independent preservation](docs/claude-code-session-backup.md)。
+
 ### Kimi Code
 
 明确指定一个当前格式的 Kimi Code session 目录：
