@@ -1,1 +1,1 @@
-"""Deterministic, synthetic-only test suite for codex-preserve."""
+"""Deterministic, synthetic-only test suite for Session Preserve."""

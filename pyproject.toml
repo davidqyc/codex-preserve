@@ -6,9 +6,9 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "codex-preserve"
-version = "0.1.3"
-description = "Local-first backup and audit tool for OpenAI Codex sessions with durable readable exports, provenance, and manifest-relative integrity verification."
+name = "session-preserve"
+version = "0.2.0"
+description = "Local-first preservation and integrity verification for persisted coding-agent sessions from Codex, Claude Code, Kimi Code, and ZCode."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
@@ -16,7 +16,7 @@ license-files = ["LICENSE"]
 # Zero runtime dependencies: the export/verify core uses only the standard
 # library, and nothing in it makes a network or model call.
 dependencies = []
-keywords = ["codex", "session", "backup", "export", "archive", "transcript", "audit", "provenance", "integrity", "verification", "local-first"]
+keywords = ["coding-agent", "codex", "claude-code", "kimi-code", "zcode", "session", "backup", "export", "transcript", "audit", "provenance", "integrity", "verification", "local-first"]
 classifiers = [
     # No `License ::` classifier: PEP 639 forbids pairing a license
     # expression with the deprecated license classifiers, and the expression
@@ -36,13 +36,13 @@ classifiers = [
 ]
 
 [project.scripts]
-codex-preserve = "codex_preserve.cli:main"
+session-preserve = "codex_preserve.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/davidqyc/codex-preserve"
-Repository = "https://github.com/davidqyc/codex-preserve"
-Issues = "https://github.com/davidqyc/codex-preserve/issues"
-"Release notes" = "https://github.com/davidqyc/codex-preserve/releases"
+Homepage = "https://github.com/davidqyc/session-preserve"
+Repository = "https://github.com/davidqyc/session-preserve"
+Issues = "https://github.com/davidqyc/session-preserve/issues"
+"Release notes" = "https://github.com/davidqyc/session-preserve/releases"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

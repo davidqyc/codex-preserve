@@ -1,4 +1,4 @@
-"""``python -m codex_preserve`` runs the same command as ``codex-preserve``."""
+"""``python -m codex_preserve`` runs the same command as ``session-preserve``."""
 
 import sys
 

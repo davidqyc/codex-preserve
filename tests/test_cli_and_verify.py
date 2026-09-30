@@ -1,4 +1,4 @@
-"""Proof tests for the codex-preserve CLI surface and the verify contract.
+"""Proof tests for the session-preserve CLI surface and the verify contract.
 
 Every fixture is synthetic. These tests additionally assert the two boundaries
 the product claims: no real Codex session directory is read, and no network or
@@ -22,6 +22,7 @@ from pathlib import Path
 from unittest import mock
 
 from codex_preserve import __version__, cli, exporter, verify
+from codex_preserve._v3_package import PACKAGE_SCHEMA_VERSION as V3_PACKAGE_SCHEMA_VERSION
 
 from tests.test_codex_conversation_export import (
     ExporterTestCase,
@@ -71,43 +72,41 @@ def captured():
 
 
 class CliSurface(unittest.TestCase):
-    """2 — the installed console entry point works and names itself."""
+    """2 — the installed Session Preserve entry point names the new product."""
 
     def test_the_package_and_entry_point_import(self):
-        # 1 — candidate package/import path works.
         self.assertTrue(__version__)
         self.assertTrue(callable(cli.main))
         self.assertEqual(exporter.PACKAGE_SCHEMA_VERSION, "2.2")
+        self.assertEqual(V3_PACKAGE_SCHEMA_VERSION, "3.0")
 
-    def test_help_exits_zero_and_disambiguates_from_codex_archive(self):
+    def test_help_exits_zero_and_lists_all_supported_providers(self):
         with captured() as (out, _err):
             code = cli.main(["--help"])
         self.assertEqual(code, 0)
         text = out.getvalue()
-        self.assertIn("codex-preserve", text)
-        self.assertIn("verify", text)
-        self.assertIn("not `codex archive`", text)
+        self.assertIn("session-preserve", text)
+        self.assertIn("codex", text)
+        self.assertIn("claude", text)
+        self.assertIn("kimi", text)
+        self.assertIn("zcode", text)
+        self.assertIn("legacy Codex package schemas 2.1 and 2.2", text)
         self.assertIn("not affiliated", text)
 
     def test_no_argument_invocation_prints_the_same_usage(self):
         with captured() as (out, _err):
             self.assertEqual(cli.main([]), 0)
-        self.assertIn("codex-preserve", out.getvalue())
+        self.assertIn("session-preserve", out.getvalue())
 
-    def test_version_reports_package_and_schema(self):
+    def test_version_reports_product_and_schema(self):
         with captured() as (out, _err):
             self.assertEqual(cli.main(["--version"]), 0)
         self.assertIn(__version__, out.getvalue())
-        self.assertIn(exporter.PACKAGE_SCHEMA_VERSION, out.getvalue())
+        self.assertIn(V3_PACKAGE_SCHEMA_VERSION, out.getvalue())
+        self.assertIn("legacy verify 2.1, 2.2", out.getvalue())
 
     def test_project_version_package_and_cli_banner_are_one_identity(self):
-        """G5C guard: the static [project] version, the package __version__
-        and the printed banner must stay a single identity.
-
-        A narrow textual read of pyproject.toml is used rather than tomllib
-        so the guard runs on every supported Python (3.9+). Any future bump
-        that updates only one of the three sides fails here.
-        """
+        """Static project version, package version and CLI banner stay aligned."""
         pyproject = (Path(__file__).resolve().parent.parent
                      / "pyproject.toml")
         project_version = None
@@ -127,7 +126,7 @@ class CliSurface(unittest.TestCase):
         with captured() as (out, _err):
             self.assertEqual(cli.main(["--version"]), 0)
         self.assertTrue(out.getvalue().startswith(
-            "codex-preserve %s" % project_version))
+            "session-preserve %s" % project_version))
 
     def test_archive_is_refused_rather_than_aliased(self):
         for verb in ("archive", "unarchive"):
@@ -137,13 +136,18 @@ class CliSurface(unittest.TestCase):
             self.assertEqual(out.getvalue(), "")
             self.assertIn("no `%s` command" % verb, err.getvalue())
 
-    def test_export_help_reaches_the_exporter_parser(self):
+    def test_export_help_lists_provider_routes(self):
+        with captured() as (out, _err):
+            self.assertEqual(cli.main(["export", "--help"]), 0)
+        self.assertIn("providers: codex, claude, kimi, zcode", out.getvalue())
+
+    def test_codex_export_help_reaches_legacy_selection_parser(self):
         with captured() as (out, _err):
             with self.assertRaises(SystemExit) as raised:
-                cli.main(["export", "--help"])
+                cli.main(["export", "codex", "--help"])
         self.assertEqual(raised.exception.code, 0)
         self.assertIn("--rollout", out.getvalue())
-        self.assertIn("codex-preserve export", out.getvalue())
+        self.assertIn("session-preserve export codex", out.getvalue())
 
 
 class VerifyContract(ExporterTestCase):
@@ -534,7 +538,7 @@ class VerifyContract(ExporterTestCase):
             code, out, err = self._verify(package)
         self.assertEqual(code, 1)
         self.assertEqual(out, "")
-        self.assertIn("codex-preserve verify: FAIL", err)
+        self.assertIn("session-preserve verify: FAIL", err)
         self.assertIn("member_size_mismatch", err)
         self.assertIn("member_state_unverifiable", err)
 
@@ -549,7 +553,7 @@ class VerifyContract(ExporterTestCase):
             code, out, err = self._verify(package)
         self.assertEqual(code, 1)
         self.assertEqual(out, "")
-        self.assertIn("codex-preserve verify: FAIL", err)
+        self.assertIn("session-preserve verify: FAIL", err)
         self.assertIn("member_missing", err)
         self.assertIn("member_state_unverifiable", err)
 
@@ -564,7 +568,7 @@ class VerifyContract(ExporterTestCase):
             code, out, err = self._verify(package)
         self.assertEqual(code, 1)
         self.assertEqual(out, "")
-        self.assertIn("codex-preserve verify: FAIL", err)
+        self.assertIn("session-preserve verify: FAIL", err)
         self.assertIn("member_size_mismatch", err)
         self.assertIn("integrity_primitive_error", err)
 
@@ -591,7 +595,7 @@ class VerifyContract(ExporterTestCase):
         code, out, err = self._verify(package)
         self.assertEqual(code, 1)
         self.assertEqual(out, "")
-        self.assertIn("codex-preserve verify: FAIL", err)
+        self.assertIn("session-preserve verify: FAIL", err)
         self.assertIn("member_symlink_not_allowed", err)
 
     def test_a_parent_directory_symlink_is_rejected(self):
@@ -660,7 +664,7 @@ class VerifyContract(ExporterTestCase):
                                side_effect=PermissionError(13, "denied")):
             code, _out, err = self._verify(package)
         self.assertEqual(code, 1)
-        self.assertIn("codex-preserve verify: FAIL", err)
+        self.assertIn("session-preserve verify: FAIL", err)
         self.assertIn("member_symlink_not_allowed", err)
 
     def test_the_primitive_is_never_called_for_a_symlinked_member(self):
@@ -727,7 +731,7 @@ class VerifyContract(ExporterTestCase):
             zip_path.chmod(0o644)
         self.assertEqual(code, 2)
         self.assertEqual(out, "")
-        self.assertIn("codex-preserve verify: UNVERIFIABLE", err)
+        self.assertIn("session-preserve verify: UNVERIFIABLE", err)
         self.assertIn("member_unreadable", err)
         self.assertNotIn("handoff_zip_mismatch", err)
         self.assertNotIn("Traceback", err)
@@ -764,7 +768,7 @@ class VerifyContract(ExporterTestCase):
             zip_path.chmod(0o644)
         self.assertEqual(code, 1)
         self.assertEqual(out, "")
-        self.assertIn("codex-preserve verify: FAIL", err)
+        self.assertIn("session-preserve verify: FAIL", err)
         self.assertIn("member_size_mismatch", err)
         self.assertIn("member_unreadable", err)
 

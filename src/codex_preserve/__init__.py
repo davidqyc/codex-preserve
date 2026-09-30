@@ -1,11 +1,12 @@
-"""codex-preserve: export Codex sessions to durable files and verify them.
+"""Session Preserve: durable local coding-agent session preservation.
 
-The export/verify core lives in :mod:`codex_preserve.exporter`; the installed
-``codex-preserve`` console command is :func:`codex_preserve.cli.main`.
+The public distribution and console command are named session-preserve.
+The internal Python package keeps its historical codex_preserve module name for
+the v0.2.0 transition while schema-2 compatibility remains frozen.
 
-This project is not affiliated with, endorsed by, or certified by OpenAI.
+This project is independent and unofficial.
 """
 
 __all__ = ["__version__"]
 
-__version__ = "0.1.3"
+__version__ = "0.2.0"
