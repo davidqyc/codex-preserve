@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run all three examples and assert the documented exit codes.
 #
-# Uses the installed `codex-preserve` command when there is one, and otherwise
+# Uses the installed `session-preserve` command when there is one, and otherwise
 # falls back to running this checkout directly. Exits 0 only if every example
 # produced exactly the verdict it is supposed to produce.
 set -u
@@ -9,9 +9,9 @@ set -u
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/.." && pwd)
 
-if command -v codex-preserve >/dev/null 2>&1; then
-    run() { codex-preserve "$@"; }
-    echo "using the installed codex-preserve command"
+if command -v session-preserve >/dev/null 2>&1; then
+    run() { session-preserve "$@"; }
+    echo "using the installed session-preserve command"
 else
     run() { PYTHONPATH="$root/src" "${PYTHON:-python3}" -m codex_preserve "$@"; }
     echo "no installed command found; running from $root/src"

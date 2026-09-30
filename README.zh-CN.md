@@ -1,183 +1,303 @@
-# codex-preserve
+# Session Preserve
 
 [English](README.md) | **简体中文**
 
-> 本页是简体中文说明。项目的规范说明与最终权威文本仍以英文 [README.md](README.md) 为准；若两者存在差异，以英文版为准。
+> 本页是中文说明。项目的规范文本仍以英文 README.md 为准；如果两边有差异，以英文版为准。
 
-`codex-preserve` 用来给已经保存在本机的 OpenAI Codex 会话留一份独立副本。
+Session Preserve 的用途很简单：
 
-这份副本可以直接阅读，也适合长期保存。
+**把已经保存在电脑里的 AI 编程会话，再独立留一份长期副本。**
 
-以后还可以重新验证：manifest（清单）里列出的文件是不是都还在，内容有没有变。验证依据是清单记录的文件大小和 SHA-256。
+v0.2.0 第一版支持四种本地会话：
 
-它只读取 Codex 会话，不会修改源会话。
+- OpenAI Codex
+- Claude Code
+- Kimi Code
+- ZCode
 
-> **这不是 `codex archive`。** Codex 内置的 `codex archive` 会改变会话在 Codex 内部的生命周期状态；`codex-preserve` 则是在 Codex 之外生成一份独立、可长期保存并可验证的副本。它不会改变会话状态，也不是 `codex archive` 的替代品。
+导出以后，你会得到一份人能直接看的 conversation.md、一份记录“这次到底读到了什么”的 export.receipt.json，以及一份 package.manifest.json。
 
-## 什么时候适合用它
+以后再运行 session-preserve verify，就能检查 manifest 里登记的文件是不是都还在，大小和 SHA-256 有没有变化。
 
-当你想给一个已经保存在本机的 Codex 会话留一份**长期备份**。
+它只读源会话，不会去修改原软件里的历史记录，也不会帮你 restore、resume、import、sync、reindex、repair、archive 或 delete。
 
-当你需要一份以后还能重新核对的**审计副本**。
-
-当你希望过一段时间还能确认：清单里的文件有没有丢、有没有损坏，或是否发生过未同步到 manifest 的修改。
-
-这些情况，都适合用 `codex-preserve`。
-
-它**不是**对话浏览器（transcript viewer）、同步工具，也不是恢复 / 导入（restore/import）工具。
-
-如果你只是想把当前 TUI 对话保存成 Markdown，Codex CLI 0.148.0+ 已经内置 `/export`，可以保存到剪贴板或文件。
-
-`codex-preserve` 处理的是另一件事：把重要会话独立保存下来，保留来源信息（provenance），并在以后按 manifest 重新校验完整性；整个过程对源会话只读，并采用安全兜底（fail-closed）的验证策略。
-
-**与 OpenAI 无隶属关系。** `codex-preserve` 是独立、非官方工具，不隶属于 OpenAI，也未获得 OpenAI 的背书、赞助或认证；它不是 OpenAI 产品或 Codex 官方组件，也不使用 OpenAI Logo 或其他视觉品牌元素。
+> 如果你只是想临时导出一份可读文本，原软件自带的导出功能通常更简单。Session Preserve 解决的是另一件事：**独立保存、记录来源和覆盖范围，并且以后还能重新验这份包有没有变。**
 
 ## 安装
 
-```bash
-python -m pip install codex-preserve
-```
+~~~bash
+python -m pip install session-preserve
+~~~
 
-需要 Python 3.9 或更高版本，运行时零依赖。可以先确认 CLI 是否可用：
+需要 Python 3.9 或更高版本，运行时没有第三方 Python 依赖。
 
-```bash
-codex-preserve --help
-```
+~~~bash
+session-preserve --help
+session-preserve --version
+~~~
 
-公开页面：[PyPI](https://pypi.org/project/codex-preserve/) · [Releases](https://github.com/davidqyc/codex-preserve/releases) · [Issues](https://github.com/davidqyc/codex-preserve/issues)
+项目页面：[GitHub](https://github.com/davidqyc/session-preserve) · [Releases](https://github.com/davidqyc/session-preserve/releases) · [Issues](https://github.com/davidqyc/session-preserve/issues)
 
-## 30 秒快速体验
+## 怎么用
 
-不需要真实的 Codex 会话。克隆仓库后，直接运行三组专门构造的测试包：
+新的导出包统一使用 schema 3.0。
 
-```bash
-git clone --depth 1 https://github.com/davidqyc/codex-preserve.git
-cd codex-preserve
+### Codex
+
+先看有哪些候选会话：
+
+~~~bash
+session-preserve export codex --list-candidates
+~~~
+
+按 session id 导出：
+
+~~~bash
+session-preserve export codex --session-id <uuid> --output-dir ./exports
+~~~
+
+如果你已经知道准确的 rollout 文件，也可以直接用 --rollout。
+
+### Claude Code
+
+明确指定一个顶层 session JSONL：
+
+~~~bash
+session-preserve export claude --source ~/.claude/projects/.../<session>.jsonl --output-dir ./exports
+~~~
+
+Claude Code 默认数据一般在 ~/.claude/projects；如果配置了 CLAUDE_CONFIG_DIR，则对应它下面的 projects。
+
+### Kimi Code
+
+明确指定一个当前格式的 Kimi Code session 目录：
+
+~~~bash
+session-preserve export kimi --source ~/.kimi-code/sessions/.../<session-id> --output-dir ./exports
+~~~
+
+第一版只读取这个 session 里的 state.json 和 agents/main/wire.jsonl。
+
+如果配置了 KIMI_CODE_HOME，就从它的 sessions 目录里选。
+
+### ZCode
+
+明确指定一个 ZCode session id：
+
+~~~bash
+session-preserve export zcode --session-id <session-id> --output-dir ./exports
+~~~
+
+默认读取 ~/.zcode/cli/db/db.sqlite。数据不在默认位置时，用 --database PATH 指定。
+
+### 验证导出包，或者打一个传输 ZIP
+
+~~~bash
+session-preserve verify ./exports/<package-dir>
+session-preserve verify ./exports/<package-dir> --json
+session-preserve pack ./exports/<package-dir>
+~~~
+
+pack 会先确认 schema 3.0 包本身能通过验证，再生成 session-package.zip。这个 ZIP 只是方便传输，不会变成 canonical package 的必要成员，也不会把自己装进自己。
+
+退出码固定：
+
+| 退出码 | 含义 |
+| ---: | --- |
+| 0 | manifest 登记的文件都存在，而且大小和 SHA-256 都匹配 |
+| 1 | 至少有一个登记文件丢失或被改过 |
+| 2 | 当前无法可靠完成验证，所以安全兜底为 UNVERIFIABLE |
+
+## 新版导出包长什么样
+
+schema 3.0 的物理文件名统一成英文：
+
+~~~text
+<package>/
+├── conversation.md
+├── export.receipt.json
+├── package.manifest.json
+├── attachments/          # 有附件时才需要
+└── artifacts/            # 有产物时才需要
+    └── index.md
+~~~
+
+以后如果生成传输用 ZIP，名字是 session-package.zip。它只是方便传输的派生文件，不是 canonical package 本身必须依赖的成员。
+
+三个核心文件分工很清楚：
+
+conversation.md 给人看。
+
+export.receipt.json 记录这次源数据覆盖到了什么、有哪些异常、有哪些 provider 自己的结构信息。
+
+package.manifest.json 记录包里有哪些文件、每个文件多少字节、SHA-256 是什么。
+
+四个 Provider 共用的是“包和完整性校验机制”，不是强行把四家的会话结构揉成同一种模型。
+
+## 四个平台分别怎么处理
+
+### Codex
+
+Codex 继续复用已经在 codex-preserve 0.1.x 里验证过的成熟解析逻辑，只是最终写成新的 schema 3.0 包。
+
+它可以读取选中的 rollout、只读查询 ~/.codex/session_index.jsonl 获取显示名称，还可以默认执行少量本地只读 Git 查询来记录工作来源。传 --no-git-probe 可以跳过实时 Git 查询。
+
+它绝不会调用 codex archive，也不会改变 Codex 里的会话状态。
+
+### Claude Code
+
+Claude 第一版只读取你明确指定的一个**顶层 session JSONL**。
+
+这里采用“宁可多保留已经落盘的安全文本，也不擅自猜当前主分支”的策略。
+
+所以：
+
+并行分支上的安全文本会保留；last-prompt 或 rewind 记录不会让别的已落盘内容凭空消失；parent 断链、重复记录之类问题会明确记下来，不会擅自修成另一条链。
+
+thinking signature、原始 tool payload、环境上下文、账号标识、未知 raw value 等不会原样导出。
+
+还有一个特别重要的边界：
+
+**Claude 界面已经显示出来的回复，不一定已经写进本地 JSONL。**
+
+所以哪怕 JSONL 本身读取稳定，我们也不会声称“Claude UI 里你看到的所有内容都已经完整保存”。
+
+第一版也不读取 subagent 和 tool-result sidecar 的正文。
+
+### Kimi Code
+
+Kimi 第一版支持当前 Kimi Code 的 session 结构：
+
+~~~text
+<session>/
+├── state.json
+└── agents/
+    └── main/
+        └── wire.jsonl
+~~~
+
+会保留明确识别出的用户文本、助手文本和有限的工具结构信息。
+
+不会原样保存 thinking、模型请求调试内容、tool 参数/结果和未知 record body。
+
+第一版不读取 subagent 正文，也不宣称支持旧的 Python 时代 ~/.kimi 存储格式。
+
+### ZCode
+
+ZCode 第一版从本机 SQLite 会话库里，按一个明确的 session id 只读读取。
+
+它使用选中 session 对应的 session、message、part 结构化记录。可见文本会保存；隐藏/模型内部消息、reasoning body、原始 tool body 不会原样导出。
+
+~/.zcode/cli/rollout/model-io-*.jsonl 属于模型 I/O 诊断轨迹，不被当成正式会话源。
+
+## “读取完整”不等于“界面里的所有内容都完整”
+
+Session Preserve 只对已经持久化在本机的数据负责。
+
+它可以告诉你：
+
+这次读源文件时是否稳定；已落盘内容里有没有遇到未知结构；保留了多少安全可读文本；有没有分支、断链、重复记录或其他限制。
+
+它不会反过来猜：
+
+界面上是不是还有尚未落盘的消息；session 是不是已经真正结束；隐藏模型状态是不是能重建；没有读取的 sidecar 是不是“应该算已覆盖”。
+
+如果遇到不认识或不能证明的结构，会把 coverage 标成 NON_COMPLETE，而不是装作完整。
+
+## verify 到底能证明什么
+
+session-preserve verify 回答的是：
+
+> manifest 登记的文件还在不在？它们现在的字节内容，是否还和 manifest 里记录的大小、SHA-256 一样？
+
+这很适合发现文件丢失、截断、存储损坏，或者有人只改了 payload 没同步更新 manifest 的情况。
+
+但它**不能证明真实性 authenticity**。
+
+因为 manifest 也是和包一起保存的，并没有独立签名。一个人如果同时修改 payload 和 manifest，再重新计算哈希，仍然可能通过 verify。
+
+所以它提供的是 manifest-relative integrity，不是数字签名、作者证明，也不是取证意义上的 chain of custody。
+
+真的需要 authenticity 时，应再用独立签名或可信时间戳机制。
+
+## 老版本怎么办
+
+原来的 codex-preserve 0.1.3 会继续留在 PyPI，不撤、不 yank。
+
+新版 Session Preserve 继续永久支持验证老 Codex 包：
+
+~~~text
+schema 2.1
+schema 2.2
+~~~
+
+新的四平台导出统一使用：
+
+~~~text
+schema 3.0
+~~~
+
+目前不会专门做一个“旧 codex-preserve 自动跳转到新 session-preserve”的兼容包。
+
+GitHub 仓库已经从 davidqyc/codex-preserve 改名为 davidqyc/session-preserve，旧 GitHub 链接由 GitHub redirect 继续转到新仓库。
+
+## 30 秒看 verify 工作
+
+仓库里还保留三份纯 synthetic 的旧 schema 测试包，专门证明新版 verifier 仍然兼容旧包：
+
+~~~bash
+git clone --depth 1 https://github.com/davidqyc/session-preserve.git
+cd session-preserve
 ./examples/run_examples.sh
-```
+~~~
 
-脚本会分别打印一个 `PASS`、一个 `FAIL` 和一个 `UNVERIFIABLE`，并检查它们的退出码是否严格为 `0`、`1`、`2`。如果本机已经安装了 `codex-preserve`，脚本会优先使用已安装的命令；否则直接从当前 checkout 运行。
+预期结果是：
 
-同一批测试数据也由正式测试套件持续校验，所以这个 Demo 展示的是实际受回归测试保护的行为，不是单独做出来的演示效果。
+~~~text
+PASS         exit 0
+FAIL         exit 1
+UNVERIFIABLE exit 2
+~~~
 
-更多说明见 [examples/README.md](examples/README.md)。
+新的 schema 3.0 四 Provider 导出也由 synthetic test suite 持续验证。
 
-## 它会做什么
+## 隐私和本地行为
 
-- **导出会话**：把一个已经保存在本机的 Codex rollout 导出成按会话组织的包，其中可以包含可读的对话文件、机器可读回执（receipt）、输入附件、输出文件和 manifest。
-- **严格验证**：检查导出包。manifest 中声明的每个成员都必须存在，并且大小与 SHA-256 必须完全匹配。
-- **记录来源（provenance）**：记录附件和产物来自哪一轮、payload 是否完整等来源信息。
-- **归一化与脱敏**：本机 home 路径会为了可读性做归一化；疑似密钥、Token 或其他凭证类敏感信息会在写入前清理。
-- **安全兜底（fail-closed）**：工具无法确认的内容会明确标记为 `unknown`，不会靠猜测补结论。如果整个包无法完成验证，则返回 `UNVERIFIABLE`，不会把未知状态误报为完整。
+Session Preserve 是 local-first 工具。
 
-## 它不会做什么
+导出和验证过程不会调用 AI 模型，也不会主动把会话上传到网络。
 
-- 不修改、不 archive、不 unarchive、不删除，也不移动 Codex 会话。
-- 不恢复、不重新索引，也不修复 Codex 历史记录。
-- 不调用模型，也不进行网络请求；没有常驻 daemon、hook、telemetry 或 event database。默认会执行少量本地只读 `git` 查询，见后文“它会读取什么”。
-- 不解码不透明或加密的推理内容（opaque / encrypted reasoning）；这类内容只统计数量，不做内容还原。
-- 不做数字签名。manifest 提供的是基于 SHA-256 的完整性声明，不是 cryptographic signature，也不能证明这个包是谁生成的。
+各 Provider parser 都按 allowlist 处理。某个 raw value 只是“存在于源数据里”，并不代表它就会被复制到导出包。
 
-## 验证能够证明什么、不能证明什么
+仓库里还有 public-hygiene scan，专门防止真实 session payload、本机私人路径和疑似凭证内容误进开源仓库。
 
-`codex-preserve verify` 只回答一个非常具体的问题：
+## 明确不做什么
 
-> manifest 里列出的文件是不是都还在？它们的内容是否仍与 manifest 中记录的大小和 SHA-256 一致？
+Session Preserve 不是云端聊天导入器，不是聊天浏览器，不做 restore / resume / import / sync，不修复或重新索引原软件历史，不做后台自动导出 daemon，不做 Provider 互转，也不做通用 Provider 插件平台。
 
-这能发现文件意外丢失、被截断、在传输或存储过程中损坏，以及 payload 已被修改但 manifest 没有同步更新的情况。
+v0.2.0 的范围就明确限定为：
 
-但它**不是防篡改系统（tamper-proofing）**。以下情况不在它的证明范围内：
-
-- **manifest 与导出包一起保存，而且没有独立签名。** 没有 signature、certificate、trust root 或 transparency log，所以这里证明的是 *manifest-relative integrity*：文件是否和当前这份清单对得上。它不证明清单本身可信，也不证明这个包是谁生成的。
-- **同时修改文件和 manifest，验证仍可能通过。** 如果有人修改 payload 后，又重新计算并更新对应的 manifest 条目，新包仍然可以通过验证。要发现这种情况，需要额外的独立 trust anchor，而本工具目前没有提供。
-- **额外新增的文件不在当前检查范围内。** 验证器只检查 manifest 明确列出的成员。后来往目录中加入一个 manifest 从未声明的文件，不会让验证失败。因此这里的“完整”是“清单里声明的东西没有丢”，不是“目录里绝对没有多余文件”。
-
-如果你需要的是 authenticity（真实性 / 来源认证）而不是 integrity（完整性），应对导出包使用专门的签名工具；`codex-preserve` 有意不自行实现这一层。
-
-## 它会读取什么
-
-导出过程完全在本地进行，并且对 Codex 源数据只读。不过，除了你显式指定的 rollout 文件，正常情况下它还可能读取以下内容：
-
-- **只读 `~/.codex/session_index.jsonl`**：按 session id 获取会话显示名称。文件不存在或不可读时会静默跳过；不会向 `~/.codex` 写入任何内容。
-- **执行本地只读 Git 查询**：会在会话记录的 workspace 中执行 `rev-parse`、`branch --show-current`、`remote get-url`、`merge-base` 等查询，用来记录工作发生的位置。这些查询都在本地完成，不会访问远程服务器。
-- **记录归一化后的仓库标识，例如 `owner/repo`**：这个标识会写入 provenance、receipt 和可读导出文件。原始 remote URL 会被丢弃，不会导出；但如果你把导出包分享给别人，归一化后的 `owner/repo` 名称也会随之分享。
-
-可以传入 `--no-git-probe` 完全跳过实时 Git 探测。这个参数只会停止工具主动查询本地 repository，并不会擦除 rollout 本身已经保存的 repository identity。如果 rollout 已经记录了仓库身份，它仍可能以归一化后的 `owner/repo` 形式出现在 receipt、可读导出、稳定输出 basename，以及输出目录 / bucket 名称中。
-
-## 使用
-
-```bash
-# 查看 CLI。
-codex-preserve --help
-
-# 列出可以导出的 session（输出已做清理）。
-codex-preserve --list-candidates
-
-# 按 session id 导出。
-codex-preserve --session-id <uuid> --output-dir ./exports
-
-# 等价的显式 export 子命令。
-codex-preserve export --session-id <uuid> --output-dir ./exports
-
-# 验证一个已经导出的 package。
-codex-preserve verify ./exports/<bucket>/<package-dir>
-
-# 输出机器可读的 verification receipt。
-codex-preserve verify ./exports/<bucket>/<package-dir> --json
-```
-
-`codex-preserve export --help` 会列出完整的导出选项，包括：
-
-- selection（选择目标）：`--rollout`、`--session-id`、`--workspace`、`--since-hours`
-- provenance（来源信息）：`--artifact ROLE=PATH`、`--review-bundle`、`--no-git-probe`
-- policy（导出策略）：`--no-normalize`、`--reasoning-cap`、`--max-package-bytes`
-
-Session 只会从 `~/.codex/sessions` 与 `~/.codex/archived_sessions` 中发现；不会宽泛扫描整个 home 目录。
-
-### `verify` 退出码
-
-| exit | 含义 |
-| --- | --- |
-| `0` | manifest 声明的全部成员都存在且匹配 |
-| `1` | 至少一个 manifest 声明的成员缺失或已被改变 |
-| `2` | 无法完成验证，安全兜底（fail-closed） |
-
-原因始终会打印。`--json` 会输出同一个 verdict，并附带每个成员的 reason code。
-
-Manifest 声明的 package member 必须是 package tree 下的真实文件；symlink member path 会被拒绝。
-
-退出码 `2` 也包括验证器无法解析 manifest 的情况，例如未知 / 缺失的 `package_schema_version`，或 manifest collection / row 的结构不符合预期的 JSON array/object。如果验证器无法解析 manifest，会直接返回 `UNVERIFIABLE`，绝不会把未经校验的内容误判为通过。
+**Codex + Claude Code + Kimi Code + ZCode。**
 
 ## 开发
 
-```bash
+~~~bash
 PYTHONPATH=src python3 -m unittest discover -t . -s tests
 python3 tools/public_hygiene_scan.py .
+python3 tools/g3_golden_regression.py
 ./examples/run_examples.sh
-```
+~~~
 
-测试套件是确定性的，并且全部使用专门构造的测试数据（synthetic fixtures）：测试会在临时目录中自行构造 rollout，不读取真实的 Codex session directory。
-
-`tools/public_hygiene_scan.py` 是一项确定性检查，用来防止内部路径、环境坐标或疑似明文凭证等私有信息被误带入开源代码库。
-
-## 本地化
-
-导出包中的部分成员文件名和默认输出目录目前仍使用简体中文。它们已经属于现有 package format 约定的一部分；要不要修改，需要按格式兼容性问题处理，而不是当作纯文案翻译。未来是否调整，这个问题仍然开放。
-
-除此之外，CLI、receipt、manifest key 和英文 README 都使用英文。
+仓库里的 Provider fixture 全部是手写 synthetic 数据，不会把真实用户 transcript 脱敏后塞进测试仓库。
 
 ## License
 
 Apache License 2.0。完整文本见 [LICENSE](LICENSE)。
 
-```text
+~~~text
 SPDX-License-Identifier: Apache-2.0
-```
+~~~
 
-## 状态
+## 独立项目声明
 
-当前已发布版本以 [GitHub Releases](https://github.com/davidqyc/codex-preserve/releases) 为准。
-
-上文描述的 export/verify contract——三种 verdict、退出码，以及 manifest 能证明和不能证明的边界——是当前 0.1.x 版本线承诺保持的核心行为。Package member 文件名仍是开放问题，见“本地化”。
-
-**与 OpenAI 无隶属关系。** `codex-preserve` 是独立、非官方工具，不隶属于 OpenAI，也未获得 OpenAI 的背书、赞助或认证；它不是 OpenAI 产品或 Codex 官方组件，也不使用 OpenAI Logo 或其他视觉品牌元素。
+Session Preserve 是独立、非官方的开源项目，与 OpenAI、Anthropic、Moonshot AI、Z.ai 均无隶属、背书、赞助或认证关系。文档中出现公司或产品名称，只是为了准确说明各 adapter 读取哪一种本地会话格式。

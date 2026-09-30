@@ -1,250 +1,241 @@
-# codex-preserve
+# Session Preserve
 
 **English** | [简体中文](README.zh-CN.md)
 
-`codex-preserve` is a local-first backup and audit tool for OpenAI Codex sessions.
+Session Preserve keeps an independent, readable copy of coding-agent sessions that are already persisted on your machine.
 
-It exports one already-persisted local session into durable, human-readable
-files outside Codex.
+v0.2.0 supports four local sources: OpenAI Codex, Claude Code, Kimi Code, and ZCode.
 
-Later, it can verify that every manifest-attested file is still present and
-byte-identical to the SHA-256 and size recorded in the manifest.
+The exported package records where its readable content came from, what the adapter could and could not establish, and a manifest of the package files. Later, session-preserve verify can check whether those manifest-attested files are still present and byte-identical to their recorded SHA-256 and size.
 
-It reads a Codex session; it never modifies one.
+Source sessions are read-only. Session Preserve does not restore, resume, import, sync, reindex, repair, archive, or delete them.
 
-> **This is not `codex archive`.** The built-in `codex archive` command changes
-> a saved session's lifecycle state *inside* Codex. `codex-preserve` exports a
-> durable copy *outside* Codex and verifies the exported package. It does not
-> modify session state, and it is not a replacement for `codex archive`.
-
-## When to use it
-
-Use `codex-preserve` when you want a durable backup or audit copy of one
-already-persisted local Codex session and you care whether every
-manifest-attested exported file is still present and byte-identical later.
-
-It is deliberately not a transcript viewer, sync tool, or restore/import
-mechanism. If all you need is a Markdown copy of the current TUI conversation,
-Codex CLI 0.148.0+ already includes `/export`, which can save to the clipboard
-or a file. `codex-preserve` is for preservation, provenance and
-manifest-relative integrity, with read-only source behavior and fail-closed
-verification.
-
-**Not affiliated with OpenAI.** `codex-preserve` is an independent, unofficial
-tool. It is not affiliated with, endorsed by, sponsored by, or certified by
-OpenAI, and it is not an OpenAI product or a first-party Codex component. It
-ships no OpenAI logo or other visual branding. It is named for the Codex
-sessions it reads.
+> If you only need a readable transcript, use the product's built-in export surface when one is available. Session Preserve is for keeping an **independent preservation package** with provenance, coverage information, and later manifest-relative integrity verification.
 
 ## Install
 
-```bash
-python -m pip install codex-preserve
-```
+~~~bash
+python -m pip install session-preserve
+~~~
 
-Python 3.9 or newer. No runtime dependencies. Confirm the CLI surface with:
+Python 3.9 or newer. The runtime has no third-party Python dependencies.
 
-```bash
-codex-preserve --help
-```
+~~~bash
+session-preserve --help
+session-preserve --version
+~~~
 
-Public project pages: [PyPI](https://pypi.org/project/codex-preserve/) ·
-[Releases](https://github.com/davidqyc/codex-preserve/releases) ·
-[Issues](https://github.com/davidqyc/codex-preserve/issues)
+Project pages: [GitHub](https://github.com/davidqyc/session-preserve) · [Releases](https://github.com/davidqyc/session-preserve/releases) · [Issues](https://github.com/davidqyc/session-preserve/issues)
 
-## See the verifier work in ~30 seconds
+## Quick start
 
-You do not need a real Codex session. Clone the repository and run the three
-synthetic packages:
+Every new export uses package schema 3.0.
 
-```bash
-git clone --depth 1 https://github.com/davidqyc/codex-preserve.git
-cd codex-preserve
-./examples/run_examples.sh
-```
+### Codex
 
-The runner prints one `PASS`, one `FAIL` and one `UNVERIFIABLE` verdict and
-checks that they exit `0`, `1` and `2` respectively. If `codex-preserve` is
-already installed it uses that command; otherwise it runs the checkout
-directly. The same fixtures are asserted by the test suite, so the demo stays
-regression-backed. See [examples/README.md](examples/README.md) for the exact
-cases.
+List sanitized candidates:
 
-## What it does
+~~~bash
+session-preserve export codex --list-candidates
+~~~
 
-- **Exports** one already-persisted local Codex rollout into a per-session
-  package: a readable conversation file, a machine receipt, input attachments
-  and output files, and a manifest.
-- **Verifies** an exported package against that manifest: every attested
-  member must be present with the attested size and SHA-256. See
-  [What verification does and does not prove](#what-verification-does-and-does-not-prove).
-- **Records provenance** for exported artifacts and attachments, including
-  which turn produced them and whether the payload is complete.
-- **Normalizes and redacts** by default: home paths are normalized for
-  readability, and credential-shaped values are removed before anything is
-  written.
-- **Fails closed.** What the tool cannot prove mechanically is reported as
-  unknown rather than guessed, and a package that cannot be verified is never
-  reported as intact.
+Export one exact persisted session:
 
-## What it does not do
+~~~bash
+session-preserve export codex --session-id <uuid> --output-dir ./exports
+~~~
 
-- It does not modify, archive, unarchive, delete or move Codex sessions.
-- It does not restore, reindex or repair Codex history.
-- It makes no model call and no network call. There is no daemon, no hook, no
-  telemetry and no event database. It does run local read-only `git` queries by
-  default — see [What it reads](#what-it-reads).
-- It does not decode opaque or encrypted reasoning. Such items are counted,
-  never reconstructed.
-- It does not sign anything. The manifest attests SHA-256 completeness and
-  integrity; that is not a cryptographic signature and says nothing about who
-  produced a package.
+You can also select an exact rollout file with --rollout.
 
-## What verification does and does not prove
+### Claude Code
 
-`codex-preserve verify` answers exactly one question: **is every member the
-manifest attests present, and do its bytes still hash to the SHA-256 and size
-the manifest records?**
+Select one top-level session JSONL explicitly:
 
-That is worth having. It detects accidental loss, truncation, corruption in
-transit or storage, and edits made to a payload without also rewriting the
-manifest.
+~~~bash
+session-preserve export claude --source ~/.claude/projects/.../<session>.jsonl --output-dir ./exports
+~~~
 
-It is not tamper-proofing, and the following are outside the proof:
+The default Claude Code store is under ~/.claude/projects, or $CLAUDE_CONFIG_DIR/projects when configured.
 
-- **The manifest is co-distributed and is not independently signed.** It
-  travels inside the package it describes. There is no signature, no
-  certificate, no trust root and no transparency log, so the check is
-  *manifest-relative* integrity, not authenticity. It says nothing about who
-  produced the package.
-- **A coordinated rewrite is not detected.** Anyone who edits a payload *and*
-  recomputes its manifest row produces a package that verifies. Detecting that
-  requires a trust anchor this tool does not have.
-- **Extra files are not part of the current check.** Verification walks the
-  members the manifest lists. A file added to the package directory that the
-  manifest never mentions does not make verification fail, so "complete" means
-  "nothing attested is missing", not "nothing else is present".
+### Kimi Code
 
-If you need authenticity rather than integrity, sign the exported package with
-a tool built for that. `codex-preserve` deliberately does not implement one.
+Select one current-format Kimi Code session directory:
 
-## What it reads
+~~~bash
+session-preserve export kimi --source ~/.kimi-code/sessions/.../<session-id> --output-dir ./exports
+~~~
 
-Export is local and read-only, but it is not limited to the one rollout file
-you name. On a normal run it may also:
+The first adapter reads that session's state.json and agents/main/wire.jsonl. If KIMI_CODE_HOME is configured, use its sessions directory instead.
 
-- **read `~/.codex/session_index.jsonl`**, read-only, to recover the session's
-  display name. The lookup is filtered by session id and returns silently if
-  the file is absent or unreadable. Nothing under `~/.codex` is ever written.
-- **run local read-only `git` queries in the session's recorded workspace**
-  (`rev-parse`, `branch --show-current`, `remote get-url`, `merge-base`) to
-  record where the work happened. These are local repository queries; they
-  contact no network and no remote.
-- **include a normalized repository identity such as `owner/repo`** in the
-  exported provenance, in the receipt and in the human-readable file.
-  The raw remote URL is discarded and never exported — but if you share an
-  export, the `owner/repo` name goes with it.
+### ZCode
 
-Pass `--no-git-probe` to skip the live git queries entirely. That is the
-entire scope of the flag: it stops the export from *asking* the local
-repository anything. It does not erase repository identity that is already
-persisted in the rollout's own session metadata. A persisted identity is
-still normalized to `owner/repo` and may appear in the receipt, in the
-human-readable export, in the stable output basename, and in the output
-directory / bucket names. The raw remote URL is discarded and never
-exported, with or without the flag.
+Select one persisted ZCode session from the local conversation database:
 
-## Use
+~~~bash
+session-preserve export zcode --session-id <session-id> --output-dir ./exports
+~~~
 
-```bash
-# See the surfaces.
-codex-preserve --help
+The default database is ~/.zcode/cli/db/db.sqlite. Use --database PATH to point at another ZCode data root.
 
-# List the sessions that could be exported (sanitized output).
-codex-preserve --list-candidates
+### Verify and make a transfer ZIP
 
-# Export one session by id.
-codex-preserve --session-id <uuid> --output-dir ./exports
+~~~bash
+session-preserve verify ./exports/<package-dir>
+session-preserve verify ./exports/<package-dir> --json
+session-preserve pack ./exports/<package-dir>
+~~~
 
-# The same export surface, named explicitly.
-codex-preserve export --session-id <uuid> --output-dir ./exports
+pack first verifies a schema-3 package and then writes the derived session-package.zip beside its canonical members. The ZIP excludes itself and does not become a canonical package dependency.
 
-# Verify an exported package.
-codex-preserve verify ./exports/<bucket>/<package-dir>
-
-# Machine-readable verification receipt.
-codex-preserve verify ./exports/<bucket>/<package-dir> --json
-```
-
-`codex-preserve export --help` lists the full export option set, including
-selection (`--rollout`, `--session-id`, `--workspace`, `--since-hours`),
-provenance (`--artifact ROLE=PATH`, `--review-bundle`, `--no-git-probe`) and
-policy (`--no-normalize`, `--reasoning-cap`, `--max-package-bytes`).
-
-Sessions are discovered under `~/.codex/sessions` and
-`~/.codex/archived_sessions` only. The home directory is never scanned
-broadly.
-
-### Verify exit codes
+Verifier exit codes are stable:
 
 | exit | meaning |
-| ---- | ------- |
-| `0`  | every manifest-attested member is present and matches |
-| `1`  | a manifest-attested member is missing or altered |
-| `2`  | the package could not be verified at all — fails closed |
+| ---: | --- |
+| 0 | every manifest-attested member is present and matches |
+| 1 | at least one attested member is missing or altered |
+| 2 | the package cannot be verified safely; the verifier fails closed |
 
-The reason is always printed. `--json` emits the same verdict as a receipt
-with per-member reason codes.
+## What a schema-3 package contains
 
-Manifest-attested package members must be real files under the package tree;
-symlinked member paths are rejected.
+The physical names are provider-neutral:
 
-Exit 2 also covers a manifest this build cannot interpret: an unrecognized or
-missing `package_schema_version`, or a manifest collection or row whose shape
-is not the expected JSON array/object. A verifier that cannot read the
-manifest reports UNVERIFIABLE rather than claiming the members it never looked
-at are fine.
+~~~text
+<package>/
+├── conversation.md
+├── export.receipt.json
+├── package.manifest.json
+├── attachments/          # optional
+└── artifacts/            # optional
+    └── index.md           # present when artifacts exist
+~~~
+
+An on-demand transfer ZIP, when supported by the release surface, is named session-package.zip and is a derived transfer artifact, not a canonical package dependency.
+
+conversation.md is the human-readable preservation view. export.receipt.json records provider-specific coverage, provenance, privacy, lifecycle/graph facts, and diagnostics. package.manifest.json records canonical package members, byte sizes, and SHA-256 values.
+
+The shared package layer does not force the four providers into one artificial conversation model. Each provider adapter keeps its own source semantics.
+
+## Provider boundaries
+
+### Codex
+
+Session Preserve reuses the mature Codex parser that shipped in codex-preserve 0.1.x, then projects the result into schema 3.
+
+It may read the selected rollout, ~/.codex/session_index.jsonl read-only for a display name, local read-only Git metadata unless --no-git-probe is used, and explicitly selected attachments/artifacts within the existing safety limits.
+
+It never calls codex archive and never changes Codex session state.
+
+### Claude Code
+
+The first Claude adapter reads one explicitly selected top-level local session JSONL.
+
+It is deliberately loss-averse. Safe persisted text on parallel branches is retained. A last-prompt or rewind marker does not make other persisted text disappear. Missing parent links and duplicate persisted records are reported rather than guessed away. Raw thinking signatures, tool payloads, environment/context bodies, account identifiers, and unknown raw values are not exported.
+
+A critical boundary: **a stable Claude JSONL does not prove that every message already visible in the Claude UI has been flushed to disk.** The receipt therefore never attests UI completeness or session terminality.
+
+Subagent and tool-result sidecar bodies are outside the first v0.2 adapter.
+
+### Kimi Code
+
+The first Kimi adapter targets the current Kimi Code session layout:
+
+~~~text
+<session>/
+├── state.json
+└── agents/
+    └── main/
+        └── wire.jsonl
+~~~
+
+It keeps recognized user/assistant text and bounded tool structure while excluding raw thinking, model-request/debug material, tool arguments/results, and unknown record bodies.
+
+Subagent bodies are not included in the first adapter. The older Python-era ~/.kimi storage family is not claimed by v0.2.0.
+
+### ZCode
+
+The first ZCode adapter reads one explicit session from the local SQLite conversation store in read-only mode.
+
+It uses the selected session's structured session, message, and part rows. Visible text is preserved; hidden/model-only messages, reasoning bodies, and raw tool bodies are not.
+
+~/.zcode/cli/rollout/model-io-*.jsonl is diagnostic model-I/O data and is **not** treated as the canonical conversation source.
+
+## Coverage is not the same as the whole UI conversation
+
+Session Preserve only makes claims it can support from persisted local data.
+
+A package can state whether the selected source snapshot was stable while it was read, whether recognized persisted records fit the adapter contract, how much safe readable content was preserved, and whether unknown schema, graph gaps, unsupported entrypoints, or other limitations were observed.
+
+It does not infer that every message currently visible in an app UI has already been persisted, that the session has ended, that hidden model state has been reconstructed, or that excluded sidecars are somehow covered.
+
+When the adapter sees unsupported or unknown persisted structure, it marks coverage NON_COMPLETE rather than silently inventing certainty.
+
+## What verification proves
+
+session-preserve verify checks manifest-relative integrity:
+
+> Are the files attested by this package's manifest present, with the same byte length and SHA-256 recorded in that manifest?
+
+That detects missing, truncated, corrupted, or independently edited package members.
+
+It does **not** prove authenticity. The manifest travels with the package and is not independently signed. A coordinated rewrite of both a payload and its manifest can still verify. There is no certificate, trust root, authorship attestation, or transparency log.
+
+If you need authenticity, sign or timestamp the package with a separate trust mechanism.
+
+## Legacy compatibility
+
+codex-preserve 0.1.3 remains published and is not yanked.
+
+Session Preserve's verifier permanently retains support for legacy Codex package schemas 2.1 and 2.2. New Session Preserve exports use schema 3.0.
+
+The old distribution is not currently a compatibility shim for the new one.
+
+The repository was renamed from davidqyc/codex-preserve to davidqyc/session-preserve; GitHub's repository redirect preserves old links.
+
+## 30-second verifier demo
+
+The repository still carries three synthetic legacy packages specifically to prove backward-compatible verification:
+
+~~~bash
+git clone --depth 1 https://github.com/davidqyc/session-preserve.git
+cd session-preserve
+./examples/run_examples.sh
+~~~
+
+The script expects PASS / exit 0, FAIL / exit 1, and UNVERIFIABLE / exit 2. Schema-3 provider exports are covered by the synthetic test suite as well.
+
+## Privacy and local behavior
+
+Session Preserve is local-first and makes no model call or network call during export or verification.
+
+Provider parsers are allowlist-based. Unknown raw values are not copied just because they exist in a local session store.
+
+The project includes a deterministic public-hygiene scan to prevent real session payloads, private machine coordinates, and credential-shaped literals from entering the public repository.
+
+## Non-goals
+
+Session Preserve is not a cloud-chat importer, transcript viewer, restore/resume/import/sync tool, history repair/reindex tool, background daemon, provider-conversion layer, generic provider/plugin SDK, or authenticity/forensic chain-of-custody system.
+
+The v0.2.0 provider scope is intentionally limited to Codex, Claude Code, Kimi Code, and ZCode.
 
 ## Development
 
-```bash
+~~~bash
 PYTHONPATH=src python3 -m unittest discover -t . -s tests
 python3 tools/public_hygiene_scan.py .
+python3 tools/g3_golden_regression.py
 ./examples/run_examples.sh
-```
+~~~
 
-The test suite is deterministic and entirely synthetic: it builds its own
-rollout fixtures in a temporary directory and never reads a real Codex session
-directory.
-
-`tools/public_hygiene_scan.py` is a deterministic check that no private
-coordinate or credential-shaped literal has entered the tree.
-
-## Localization
-
-Package member filenames and the default output directory are currently
-Simplified Chinese, because they are part of the already-proven package format
-this tool exports. Changing them is a package-format decision rather than a
-cosmetic one, and it is still open. Everything else — the CLI, the receipts,
-the manifest keys and this documentation — is English.
+All committed provider fixtures are hand-authored synthetic data. Tests do not copy real user transcripts into the repository.
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE) for the full text.
+Apache License 2.0. See [LICENSE](LICENSE).
 
-```text
+~~~text
 SPDX-License-Identifier: Apache-2.0
-```
+~~~
 
-## Status
+## Independence
 
-The current published release is listed on [GitHub Releases](https://github.com/davidqyc/codex-preserve/releases).
-The export/verify contract described above — the three verdicts, the exit
-codes, and the limits of what the manifest proves — is what the current 0.1.x
-line commits to. Package member filenames are still an open question; see
-[Localization](#localization).
-
-**Not affiliated with OpenAI.** `codex-preserve` is an independent, unofficial
-tool. It is not affiliated with, endorsed by, sponsored by, or certified by
-OpenAI, and it is not an OpenAI product or a first-party Codex component. It
-ships no OpenAI logo or other visual branding.
+Session Preserve is an independent, unofficial open-source project. It is not affiliated with, endorsed by, sponsored by, or certified by OpenAI, Anthropic, Moonshot AI, or Z.ai. Product and company names are used only to identify the local session formats the adapters read.

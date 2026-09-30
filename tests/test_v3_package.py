@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import zipfile
 
 from codex_preserve import verify
 from codex_preserve._v3_package import (
@@ -15,6 +16,7 @@ from codex_preserve._v3_package import (
     V3Member,
     V3PackageSpec,
     build_v3_materialization,
+    generate_v3_transfer_zip,
     verify_v3_package,
     write_v3_package,
 )
@@ -136,6 +138,43 @@ class V3PackageContract(unittest.TestCase):
         self.assertEqual(result["verdict"], "FAIL")
         self.assertIn("symlink_in_package",
                       {row["code"] for row in result["reasons"]})
+
+    def test_transfer_zip_is_deterministic_derived_and_self_excluding(self):
+        package = self.root / "package"
+        extras = (
+            V3Member("attachments/input.txt", "attachment", b"input\n"),
+            V3Member("artifacts/result.txt", "artifact", b"result\n"),
+        )
+        write_v3_package(package, spec(extras))
+        first = generate_v3_transfer_zip(package)
+        first_bytes = first["path"].read_bytes()
+        second = generate_v3_transfer_zip(package)
+        self.assertEqual(first_bytes, second["path"].read_bytes())
+        self.assertEqual(first["sha256"], second["sha256"])
+        self.assertFalse(first["canonical_package_dependency"])
+        self.assertTrue(first["excludes_itself"])
+        with zipfile.ZipFile(first["path"]) as archive:
+            names = archive.namelist()
+        self.assertEqual(
+            names,
+            [
+                "package.manifest.json",
+                "artifacts/result.txt",
+                "attachments/input.txt",
+                "conversation.md",
+                "export.receipt.json",
+            ],
+        )
+        self.assertNotIn("session-package.zip", names)
+        self.assertEqual(verify_v3_package(package)["verdict"], "PASS")
+
+    def test_transfer_zip_refuses_a_broken_package(self):
+        package = self.root / "package"
+        write_v3_package(package, spec())
+        (package / CONVERSATION_FILENAME).write_text("tampered\n", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            generate_v3_transfer_zip(package)
+        self.assertFalse((package / "session-package.zip").exists())
 
     def test_invalid_extra_member_boundaries_fail_before_write(self):
         cases = (

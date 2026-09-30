@@ -10,12 +10,14 @@ This module does not define a generic conversation ontology.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 import json
 import os
 from pathlib import Path
 import shutil
 import tempfile
 from typing import Any, Dict, Iterable, Optional, Tuple
+import zipfile
 
 from ._shared_core import (
     atomic_write_bytes,
@@ -220,6 +222,44 @@ def write_v3_package(package_dir: Path, spec: V3PackageSpec) -> Path:
         shutil.rmtree(staging, ignore_errors=True)
         raise
     return package_dir
+
+
+def generate_v3_transfer_zip(package_dir: Path) -> Dict[str, Any]:
+    """Build deterministic session-package.zip from one verified v3 package.
+
+    The ZIP is derived transport material. It is deliberately excluded from
+    canonical package integrity and never changes package.manifest.json.
+    """
+    package_dir = Path(package_dir)
+    verification = verify_v3_package(package_dir)
+    if verification["verdict"] != "PASS":
+        raise ValueError("schema-3 package must verify before transfer ZIP generation")
+
+    manifest_path = package_dir / MANIFEST_FILENAME
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    member_paths = sorted(row["path"] for row in manifest["members"])
+    archive_paths = [MANIFEST_FILENAME] + member_paths
+
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_STORED) as archive:
+        for member_path in archive_paths:
+            payload = (package_dir / member_path).read_bytes()
+            info = zipfile.ZipInfo(member_path, date_time=(1980, 1, 1, 0, 0, 0))
+            info.create_system = 3
+            info.external_attr = (0o100644 & 0xFFFF) << 16
+            info.compress_type = zipfile.ZIP_STORED
+            archive.writestr(info, payload)
+
+    payload = buffer.getvalue()
+    target = package_dir / TRANSFER_ZIP_FILENAME
+    atomic_write_bytes(target, payload)
+    return {
+        "path": target,
+        "bytes": len(payload),
+        "sha256": sha256_bytes(payload),
+        "canonical_package_dependency": False,
+        "excludes_itself": True,
+    }
 
 
 def _reason(code: str, detail: str, member: Optional[str] = None) -> dict:

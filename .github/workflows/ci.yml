@@ -25,8 +25,8 @@ jobs:
         run: python -m pip install .
       - name: Console command is installed and self-describing
         run: |
-          codex-preserve --help
-          codex-preserve --version
+          session-preserve --help
+          session-preserve --version
       - name: Public hygiene scan
         run: python tools/public_hygiene_scan.py .
       - name: Deterministic synthetic test suite
@@ -94,6 +94,6 @@ jobs:
           python -m venv /tmp/fresh
           /tmp/fresh/bin/python -m pip install --upgrade pip
           /tmp/fresh/bin/python -m pip install dist/*.whl
-          /tmp/fresh/bin/codex-preserve --help
-          /tmp/fresh/bin/codex-preserve --version
+          /tmp/fresh/bin/session-preserve --help
+          /tmp/fresh/bin/session-preserve --version
           PATH="/tmp/fresh/bin:$PATH" ./examples/run_examples.sh

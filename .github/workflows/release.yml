@@ -73,7 +73,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     environment:
       name: pypi
-      url: https://pypi.org/p/codex-preserve
+      url: https://pypi.org/p/session-preserve
     permissions:
       # `id-token: write` is requested in this job and nowhere else: it is the
       # OIDC credential Trusted Publishing exchanges for a short-lived upload
