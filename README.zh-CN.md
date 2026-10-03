@@ -292,6 +292,10 @@ python3 tools/g3_golden_regression.py
 
 仓库里的 Provider fixture 全部是手写 synthetic 数据，不会把真实用户 transcript 脱敏后塞进测试仓库。
 
+四个 Provider 通过小型内部静态注册表接入。
+[Provider Adapter 扩展合同](docs/provider-adapters.zh-CN.md)
+说明 source、parser、spec、registration、tests 和文档的要求。
+
 ## License
 
 Apache License 2.0。完整文本见 [LICENSE](LICENSE)。
