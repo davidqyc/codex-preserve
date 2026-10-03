@@ -9,16 +9,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Sequence
 
-from . import __version__, exporter, verify
-from ._claude_source import parse_claude_session
-from ._claude_v3 import claude_v3_spec
-from ._codex_v3 import codex_v3_spec
-from ._kimi_source import parse_kimi_session
-from ._kimi_v3 import kimi_v3_spec
+from . import __version__, verify
+from ._provider_registry import PROVIDER_REGISTRY, ProviderExportBlocked
 from ._v3_package import (
     CONVERSATION_FILENAME,
     MANIFEST_FILENAME,
@@ -28,14 +23,11 @@ from ._v3_package import (
     generate_v3_transfer_zip,
     write_v3_package,
 )
-from ._zcode_source import parse_zcode_session
-from ._zcode_v3 import zcode_v3_spec
 from ._shared_core import json_bytes, sha256_bytes
 
 
 DEFAULT_OUTPUT_DIR = "~/Desktop/SessionPreserve"
-DEFAULT_ZCODE_DB = "~/.zcode/cli/db/db.sqlite"
-PROVIDERS = ("codex", "claude", "kimi", "zcode")
+PROVIDERS = tuple(PROVIDER_REGISTRY)
 
 USAGE = """\
 session-preserve — preserve local coding-agent sessions as durable,
@@ -168,99 +160,42 @@ def _write_spec(spec: V3PackageSpec, output_dir: Path,
     return 0
 
 
-def _codex_export_main(argv: Sequence[str]) -> int:
-    parser = exporter.build_parser()
-    parser.prog = "session-preserve export codex"
-    parser.description = (
-        "Preserve one already-persisted local Codex session as a schema-3 package."
-    )
-    parser.set_defaults(output_dir=DEFAULT_OUTPUT_DIR)
-    options = parser.parse_args(argv)
-    options.generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    if options.build_handoff_zip:
-        parser.error(
-            "--build-handoff-zip is a legacy package option and is not part of "
-            "the schema-3 export surface"
+def _export_main(argv: Sequence[str]) -> int:
+    if not argv or argv[0] in ("-h", "--help", "help"):
+        print(
+            "usage: session-preserve export PROVIDER [OPTIONS]\n\n"
+            "providers: %s\n"
+            "run 'session-preserve export PROVIDER --help' for provider options"
+            % ", ".join(PROVIDER_REGISTRY)
         )
-
-    if options.list_candidates:
-        rows = exporter.scrub_structure(
-            exporter.list_candidates(options.workspace, options.since_hours),
-            exporter.selection_privacy(),
-        )
-        print(json.dumps({"candidate_count": len(rows), "candidates": rows},
-                         indent=2, sort_keys=True, ensure_ascii=False))
         return 0
-
+    provider = argv[0].lower()
+    if provider not in PROVIDER_REGISTRY:
+        print(
+            "unknown provider %r; choose one of: %s"
+            % (argv[0], ", ".join(PROVIDERS)),
+            file=sys.stderr,
+        )
+        return 2
+    adapter = PROVIDER_REGISTRY[provider]
+    parser = adapter.build_parser(DEFAULT_OUTPUT_DIR)
+    options = parser.parse_args(argv[1:])
+    if adapter.prepare_options is not None:
+        adapter.prepare_options(options, parser)
+    if adapter.candidate_listing is not None:
+        candidates = adapter.candidate_listing(options)
+        if candidates is not None:
+            print(json.dumps(candidates, indent=2, sort_keys=True, ensure_ascii=False))
+            return 0
     try:
-        context = exporter.run_export(options)
-        spec = codex_v3_spec(context)
-    except exporter.ExportBlocked as blocked:
+        source = adapter.select_and_parse(options)
+        spec = adapter.build_spec(source)
+    except ProviderExportBlocked as blocked:
         print(json.dumps({
             "export_status": blocked.status,
-            "detail": exporter.selection_privacy().clean(blocked.detail),
+            "detail": blocked.detail,
         }, indent=2, sort_keys=True, ensure_ascii=False), file=sys.stderr)
         return 2
-    return _write_spec(
-        spec,
-        Path(options.output_dir),
-        quiet=bool(options.quiet),
-        stdout_receipt=bool(options.stdout_receipt),
-    )
-
-
-def _simple_export_parser(provider: str) -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="session-preserve export %s" % provider,
-        description="Preserve one explicitly selected local %s session."
-                    % provider,
-    )
-    if provider in ("claude", "kimi"):
-        parser.add_argument(
-            "--source",
-            required=True,
-            help=(
-                "top-level Claude session JSONL"
-                if provider == "claude"
-                else "Kimi Code session directory containing state.json and agents/main/wire.jsonl"
-            ),
-        )
-    elif provider == "zcode":
-        parser.add_argument(
-            "--database",
-            default=DEFAULT_ZCODE_DB,
-            help="ZCode conversation SQLite database (default: %(default)s)",
-        )
-        parser.add_argument(
-            "--session-id",
-            required=True,
-            help="exact persisted ZCode session id",
-        )
-    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--stdout-receipt", action="store_true")
-    parser.add_argument("--quiet", action="store_true")
-    return parser
-
-
-def _noncodex_export_main(provider: str, argv: Sequence[str]) -> int:
-    parser = _simple_export_parser(provider)
-    options = parser.parse_args(argv)
-
-    if provider == "claude":
-        source = parse_claude_session(Path(options.source).expanduser())
-        spec = claude_v3_spec(source)
-    elif provider == "kimi":
-        source = parse_kimi_session(Path(options.source).expanduser())
-        spec = kimi_v3_spec(source)
-    elif provider == "zcode":
-        source = parse_zcode_session(
-            Path(options.database).expanduser(), options.session_id
-        )
-        spec = zcode_v3_spec(source)
-    else:
-        parser.error("unsupported provider")
-
     if not spec.source_stable:
         print(json.dumps({
             "export_status": "BLOCKED_SOURCE_UNSTABLE",
@@ -272,34 +207,9 @@ def _noncodex_export_main(provider: str, argv: Sequence[str]) -> int:
             ),
         }, indent=2, sort_keys=True, ensure_ascii=False), file=sys.stderr)
         return 2
-
-    return _write_spec(
-        spec,
-        Path(options.output_dir),
-        quiet=bool(options.quiet),
-        stdout_receipt=bool(options.stdout_receipt),
-    )
-
-
-def _export_main(argv: Sequence[str]) -> int:
-    if not argv or argv[0] in ("-h", "--help", "help"):
-        print(
-            "usage: session-preserve export PROVIDER [OPTIONS]\n\n"
-            "providers: codex, claude, kimi, zcode\n"
-            "run 'session-preserve export PROVIDER --help' for provider options"
-        )
-        return 0
-    provider = argv[0].lower()
-    if provider not in PROVIDERS:
-        print(
-            "unknown provider %r; choose one of: %s"
-            % (argv[0], ", ".join(PROVIDERS)),
-            file=sys.stderr,
-        )
-        return 2
-    if provider == "codex":
-        return _codex_export_main(argv[1:])
-    return _noncodex_export_main(provider, argv[1:])
+    return _write_spec(spec, Path(options.output_dir),
+                       quiet=bool(options.quiet),
+                       stdout_receipt=bool(options.stdout_receipt))
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

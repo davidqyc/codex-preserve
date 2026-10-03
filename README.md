@@ -230,6 +230,10 @@ python3 tools/g3_golden_regression.py
 
 All committed provider fixtures are hand-authored synthetic data. Tests do not copy real user transcripts into the repository.
 
+The four providers use a small internal static registry. See the
+[provider adapter extension contract](docs/provider-adapters.md) for source,
+parser, spec, registration, tests and documentation requirements.
+
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).
